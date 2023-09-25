@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pillow
+numpy
+open_clip_torch
+python-multipart
+transformers
+h5py
+scipy
+dill
+numba
