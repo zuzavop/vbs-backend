@@ -1,4 +1,5 @@
 import h5py
+import time
 import numpy as np
 import open_clip
 
@@ -9,89 +10,100 @@ from scipy.spatial.distance import cosine
 
 import database as db
 import logger as l
+import model as m
 
 
-def load_open_clip():
-    # load model and tokenizer via open clip
-    model, _, preprocess = open_clip.create_model_and_transforms(
-        'hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K'
-    )
-    tokenizer = open_clip.get_tokenizer('hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K')
-
-    return model, tokenizer, preprocess
-
-
-@jit(nopython=True)
-def cosine_similarity_numba(u: np.ndarray, v: np.ndarray):
-    assert u.shape[0] == v.shape[0]
-    uv = 0
-    uu = 0
-    vv = 0
-    for i in range(u.shape[0]):
-        uv += u[i] * v[i]
-        uu += u[i] * u[i]
-        vv += v[i] * v[i]
-    cos_theta = 1
-    if uu != 0 and vv != 0:
-        cos_theta = uv / np.sqrt(uu * vv)
-    return cos_theta
+def get_cosine_ranking(query_vector, matrix):
+    # get the dot product for every entry
+    dot_product = np.matmul(query_vector, matrix.T)
+    # sort for the indices of the nearest neighbors
+    nearest_neighbors = np.argsort(-dot_product)
+    return nearest_neighbors, dot_product
 
 
 def get_images_by_text_query(query: str, k: int):
+    start_time = time.time()
+
     # load model depending on selcted model
-    model, tokenizer, _ = load_open_clip()
+    model = m.loaded_model
+    tokenizer = m.loaded_tokenizer
 
     # tokenize query input and encode the data using the selected model
     query_tokens = tokenizer(query)
     text_features = model.encode_text(query_tokens).detach().cpu().numpy().flatten()
 
+    # normalize vector to make it smaller and for cosine calculcation
+    text_features = text_features / np.linalg.norm(text_features)
+
     # load data
     data = db.get_data()
-    idx = np.array(db.get_idx())
+    ids = np.array(db.get_ids())
 
     # calculate cosine distance between embedding and data and sort distances
-    distances = np.apply_along_axis(
-        lambda x: cosine_similarity_numba(text_features, x), axis=1, arr=data
-    )
-    sorted_indices = np.argsort(distances)[::-1]
+    sorted_indices, distances = get_cosine_ranking(text_features, data)
+    sorted_indices = sorted_indices[:k]
+    distances = distances[sorted_indices]
 
     # give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
-            idx[sorted_indices[:k]].tolist(),
-            data[sorted_indices][:k].tolist(),
-            distances[sorted_indices][:k].tolist(),
+            ids[sorted_indices].tolist(),
+            data[sorted_indices].tolist(),
+            distances.tolist(),
         )
     )
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
+
+    del data
+    del ids
+    del distances
+    del sorted_indices
+
     return most_similar_samples
 
 
 def get_images_by_image_query(image: Image, k: int):
+    start_time = time.time()
+
     # load model depending on selcted model
-    model, _, preprocess = load_open_clip()
+    model = m.loaded_model
+    preprocess = m.loaded_preprocess
 
     # preprocess query input and encode the data using the selected model
     query_image = preprocess(image).unsqueeze(0)
     image_features = model.encode_image(query_image).detach().cpu().numpy().flatten()
 
+    # normalize vector to make it smaller and for cosine calculcation
+    image_features = image_features / np.linalg.norm(image_features)
+
     # load data
     data = db.get_data()
-    idx = np.array(db.get_idx())
+    ids = np.array(db.get_ids())
 
     # calculate cosine distance between embedding and data and sort distances
-    distances = np.apply_along_axis(
-        lambda x: cosine_similarity_numba(image_features, x), axis=1, arr=data
-    )
-    sorted_indices = np.argsort(distances)[::-1]
+    sorted_indices, distances = get_cosine_ranking(image_features, data)
+    sorted_indices = sorted_indices[:k]
+    distances = distances[sorted_indices]
 
     # give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
-            idx[sorted_indices[:k]].tolist(),
-            data[sorted_indices][:k].tolist(),
-            distances[sorted_indices][:k].tolist(),
+            ids[sorted_indices].tolist(),
+            data[sorted_indices].tolist(),
+            distances.tolist(),
         )
     )
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
+
+    del data
+    del ids
+    del distances
+    del sorted_indices
+
     return most_similar_samples
 
 

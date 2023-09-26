@@ -23,8 +23,10 @@ async def text_query(query_params: dict, get_embeddings: bool = False):
     Get a list of images based on a text query.
     '''
     l.logger.info(query_params)
-    query = query_params.get("query", "")
-    k = query_params.get("k", 10)
+    query = query_params.get('query', '')
+    k = query_params.get('k', 100)
+
+    k = min(k, 10000)
 
     # Call the function to retrieve images
     images = fs.get_images_by_text_query(query, k)
@@ -38,7 +40,7 @@ async def text_query(query_params: dict, get_embeddings: bool = False):
 @app.post('/imageQuery/')
 async def image_query(
     image: UploadFile,
-    k: int = Query(10, title='Number of Images'),
+    k: int = 100,
     get_embeddings: bool = False,
 ):
     '''
@@ -51,10 +53,7 @@ async def image_query(
 
         # Open the image using Pillow (PIL)
         uploaded_image = Image.open(BytesIO(image_data))
-
-        # Perform image processing here (e.g., resizing, filtering, etc.)
-        # For this example, we'll just return the image dimensions.
-        image_width, image_height = uploaded_image.size
+        k = min(k, 10000)
 
         images = fs.get_images_by_image_query(uploaded_image, k)
         if not get_embeddings:
