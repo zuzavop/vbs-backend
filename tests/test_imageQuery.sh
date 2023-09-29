@@ -1,3 +1,3 @@
 #!/bin/sh
 
-curl -v -F "image=@image.jpg" http://localhost:8000/imageQuery/
+curl -F "image=@image.jpg" -F "k=1000" http://localhost:8000/imageQuery/

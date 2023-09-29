@@ -13,10 +13,11 @@ import logger as l
 # Create an instance of the FastAPI class
 app = FastAPI()
 
+# Load features into the database
 db.load_features()
 
 
-# Define the 'textquery' route
+# Define the 'textQuery' route
 @app.post('/textQuery/')
 async def text_query(query_params: dict, get_embeddings: bool = False):
     '''
@@ -24,19 +25,33 @@ async def text_query(query_params: dict, get_embeddings: bool = False):
     '''
     l.logger.info(query_params)
     query = query_params.get('query', '')
-    k = query_params.get('k', 100)
-
-    k = min(k, 10000)
+    k = min(query_params.get('k', 100), 10000)
 
     # Call the function to retrieve images
     images = fs.get_images_by_text_query(query, k)
-    if not get_embeddings:
-        images = [[x[0], x[2]] for x in images]
 
-    return {'images': images}
+    # Create return dictionary
+    ret_dict = []
+    for ids, rank, score, features in images:
+        if not get_embeddings:
+            features = []
+
+        video_id, frame_id = ids.decode('utf-8').split('_', 1)
+
+        tmp_dict = {
+            'uri': ids,
+            'rank': rank,
+            'score': score,
+            'id': [video_id, frame_id],
+            'features': features,
+            'label': None,
+        }
+        ret_dict.append(tmp_dict)
+
+    return ret_dict
 
 
-# Define the 'imagequery' route
+# Define the 'imageQuery' route
 @app.post('/imageQuery/')
 async def image_query(
     image: UploadFile,
@@ -56,41 +71,47 @@ async def image_query(
         k = min(k, 10000)
 
         images = fs.get_images_by_image_query(uploaded_image, k)
-        if not get_embeddings:
-            images = [[x[0], x[2]] for x in images]
 
-        return {'images': images}
+        # Create return dictionary
+        ret_dict = []
+        for ids, rank, score, features in images:
+            if not get_embeddings:
+                features = []
+
+            video_id, frame_id = ids.decode('utf-8').split('_', 1)
+
+            tmp_dict = {
+                'uri': ids,
+                'rank': rank,
+                'score': score,
+                'id': [video_id, frame_id],
+                'features': features,
+                'label': None,
+            }
+            ret_dict.append(tmp_dict)
+
+        return ret_dict
+
     except Exception as e:
         return {"error": str(e)}
 
 
-# Define the 'getvideo' route
-@app.get('/getVideo')
-async def get_video_images(
-    video_id: str = Query(..., title='Video ID'),
-    k: int = Query(10, title='Number of Images'),
-):
+# Define the 'getVideoImage' route
+@app.get('/getVideoImage')
+async def get_video_images(video_id: str, frame_id: str):
     '''
     Get a list of video images based on a video ID.
     '''
     # Call the function to retrieve video images
-    video_images = fs.get_video_images_by_id(video_id, k)
+    video_image = fs.get_video_image_by_id(video_id, frame_id)
 
-    return {'video_id': video_id, 'k': k, 'video_images': video_images}
+    return {'video_id': video_id, 'frame_id': frame_id, 'video_image': video_image}
 
 
 # Define a route and its handler function
 @app.get('/')
 async def read_root():
     return {'message': 'Server is running!'}
-
-
-# @app.on_event("startup")
-# async def startup_event():
-#     logger = logging.getLogger('uvicorn.access')
-#     handler = logging.StreamHandler()
-#     handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-#     logger.addHandler(handler)
 
 
 # Run the FastAPI application

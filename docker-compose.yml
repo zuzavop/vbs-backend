@@ -8,5 +8,4 @@ services:
       - "8000:8000"
     volumes:
       - ./server:/app  # Mount the local app directory to /app in the container
-      - /mnt/datasets/vbs/features-laion/:/data/vbs/features-laion/
-      - /mnt/datasets/vbs/processed/:/data/vbs/processed/
+      - /mnt/datasets/vbs/:/data/vbs/

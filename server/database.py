@@ -1,15 +1,21 @@
 import os
+import dill
 import h5py
+import time
 
+import pandas as pd
 import numpy as np
 
 from tqdm import tqdm
 
 import logger as l
+import configs as c
 
-import dill
 
-import time
+# Selector for the database loader
+features_to_use = 'features-laion'
+if c.MODEL == 'laion':
+    features_to_use = 'features-laion'
 
 
 # Class structure to store data and indices
@@ -48,10 +54,12 @@ def load_features():
     l.logger.info('Start to load pre-generated embeddings')
 
     # Specify the root directory you want to start walking from
-    root_directory = '/data/vbs/'
+    root_directory = os.path.join(c.DATABASE_ROOT, features_to_use)
 
     # Internal storage
-    internal_storage = '/data/vbs/processed/pickled_files.pkl'
+    internal_storage = os.path.join(
+        c.DATABASE_PROCESSED, f'pickled_files_{c.MODEL}.pkl'
+    )
     if not os.path.exists(internal_storage):
         start_time = time.time()
 
@@ -66,25 +74,31 @@ def load_features():
                 # Append the file path to the list
                 file_paths.append(file_path)
 
-        ids = None
-        data = None
         # Now, file_paths contains all the file paths in the directory structure
+        # Loop two times through the file paths to reduce memory
+        tmp_data = []
         for file_path in tqdm(file_paths):
             if 'hdf5' in file_path:
                 h5_file = h5py.File(file_path, 'r')
-
-                if data is None:
-                    data = np.array(h5_file['data'])
-                else:
-                    data = np.concatenate((data, np.array(h5_file['data'])), axis=0)
-
-                # get video id and key frame
-                if ids is None:
-                    ids = np.array(h5_file['ids'])
-                else:
-                    ids = np.concatenate((ids, np.array(h5_file['ids'])), axis=0)
+                tmp_data.append(np.array(h5_file['data']))
 
                 del h5_file
+
+        # Concatenate list of data to one data array
+        data = np.concatenate(tmp_data, axis=0)
+        del tmp_data
+
+        tmp_ids = []
+        for file_path in tqdm(file_paths):
+            if 'hdf5' in file_path:
+                h5_file = h5py.File(file_path, 'r')
+                tmp_ids.append(np.array(h5_file['ids']))
+
+                del h5_file
+
+        # Concatenate list of ids to one ids array
+        ids = np.concatenate(tmp_ids, axis=0)
+        del tmp_ids
 
         del file_paths
 
@@ -119,3 +133,13 @@ def load_features():
 
     l.logger.info(get_data().shape)
     l.logger.info('Finished to load pre-generated embeddings')
+
+
+def load_msb(video_id, frame_id):
+    l.logger.info('Start to load MSB')
+
+    # Specify the directory
+    tsv_file_path = os.path.join(c.DATABASE_ROOT, 'msb', f'{video_id}.tsv')
+    data = pd.read_csv(tsv_file_path, sep='\t')
+
+    return data[data['startframe'] == frame_id]
