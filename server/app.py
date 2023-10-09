@@ -26,6 +26,8 @@ async def text_query(query_params: dict, get_embeddings: bool = False):
     l.logger.info(query_params)
     query = query_params.get('query', '')
     k = min(query_params.get('k', 100), 10000)
+    dataset = query_params.get('dataset', '')
+    model = query_params.get('model', '')
 
     # Call the function to retrieve images
     images = fs.get_images_by_text_query(query, k)
@@ -55,7 +57,7 @@ async def text_query(query_params: dict, get_embeddings: bool = False):
 @app.post('/imageQuery/')
 async def image_query(
     image: UploadFile,
-    k: int = 100,
+    k: int = 1000,
     get_embeddings: bool = False,
 ):
     '''
@@ -96,9 +98,55 @@ async def image_query(
         return {"error": str(e)}
 
 
-# Define the 'getVideoImage' route
-@app.get('/getVideoImage')
-async def get_video_images(video_id: str, frame_id: str):
+# Define the 'imageQueryByID' route
+@app.post('/imageQueryByID/')
+async def image_query_by_id(
+    video_id: str,
+    frame_id: str,
+    k: int = 1000,
+    get_embeddings: bool = False,
+):
+    '''
+    Get a list of images based on an image query.
+    '''
+    # Call the function to retrieve images
+    try:
+        # Read the uploaded image file
+        image_data = await image.read()
+
+        # Open the image using Pillow (PIL)
+        uploaded_image = Image.open(BytesIO(image_data))
+        k = min(k, 10000)
+
+        images = fs.get_images_by_image_query(uploaded_image, k)
+
+        # Create return dictionary
+        ret_dict = []
+        for ids, rank, score, features in images:
+            if not get_embeddings:
+                features = []
+
+            video_id, frame_id = ids.decode('utf-8').split('_', 1)
+
+            tmp_dict = {
+                'uri': ids,
+                'rank': rank,
+                'score': score,
+                'id': [video_id, frame_id],
+                'features': features,
+                'label': None,
+            }
+            ret_dict.append(tmp_dict)
+
+        return ret_dict
+
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# Define the 'getVideoFrames' route
+@app.get('/getVideoFrames')
+async def get_video_frames(video_id: str, frame_id: str):
     '''
     Get a list of video images based on a video ID.
     '''

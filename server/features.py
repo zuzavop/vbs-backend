@@ -3,7 +3,6 @@ import time
 import numpy as np
 import open_clip
 
-from numba import jit
 from PIL import Image
 
 from scipy.spatial.distance import cosine
@@ -108,7 +107,6 @@ def get_images_by_image_query(image: Image, k: int):
     del sorted_indices
 
     return most_similar_samples
-
 
 
 def get_video_image_by_id(video_id: str, frame_id: str):

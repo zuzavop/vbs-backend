@@ -8,8 +8,16 @@
 
 ## Overview
 
-Backend for the our submission Group at https://videobrowsershowdown.org/
+Backend for our submission at the https://videobrowsershowdown.org/ VBS challenge.
+The VBS is an international video content search competition that evaluates the state-of-the-art of interactive video retrieval systems. It is performed annually as a special event at the International Conference on MultiMedia Modeling (MMM) since 2012. It aims at pushing research on large-scale video retrieval systems that are effective, fast, and easy to use for content search scenarios that are truly relevant in practice (e.g., known-item search in an ever-increasing video archive, as nowadays ubiquitous in many domains of our digital world).
 
+The VBS usually consists of an expert session and a novice session. In the expert session the developers of the systems themselves try to solve different types of content search queries that are issued in an ad-hoc manner. Although the dataset itself is available to the researchers several months before the actual competition, the queries are unknown in advance and issued on-site. In the novice session volunteers from the MMM conference audience (without help from the experts) are required to solve another set of tasks. This should ensure that the interactive video retrieval tools do not only improve in terms of retrieval performance but also in terms of usage (i.e., ease-of-use).
+
+There are different types of queries:
+
+ - **Known-Item Search (KIS):** a single video clip (20 secs long) is randomly selected from the dataset and visually presented with the projector on-site. The participants need to find exactly the single instance presented. Another task variation of this kind is textual KIS, where instead of a visual presentation, the searched segment is described only by text given by the moderator (and presented as text via the projector).
+ - **Ad-hoc Video Search (AVS):** here, a rather general description of many shots is presented by the moderator (e.g., „Find all shots showing cars in front of trees“) and the  participants need to find as many correct examples (instances) according to the description.
+Each query has a time limit (e.g., 5-7 minutes) and is rewarded on success with a score that depends on several factors: the required search time, the number of false submissions (which are penalized), and the number of different instances found for AVS tasks. For the latter case it is also considered, how many different ‚ranges‚ were submitted for an AVS tasks. For example, many different but temporally close shots in the same video count much less than several different shots from different videos.
 
 ## Table of Contents
 
@@ -32,13 +40,16 @@ See examples in the tests directory.
 However, in general it is a RESTAPI with the following endpoints:  
 /textQuery/  
 /imageQuery/  
+/imageQueryByID/  
 /getVideoImages/  
 
 ## Prerequisites
 
 - **Python**: Python 3.7+ is required.
 
-- **FastAPI & Uvicorn**
+- **Nginx** (for general route handling)
+
+- **FastAPI & Uvicorn** (for request handling)
 
 - **Pillow** (for image processing)
 
@@ -56,8 +67,6 @@ However, in general it is a RESTAPI with the following endpoints:
 
 - **Dill** (for object serialization)
 
-- **Numba** (for JIT compiling Python functions)
-
 Ensure Python is installed, create a virtual environment if needed, and install these libraries within your project environment for isolation.
 
 
@@ -67,13 +76,13 @@ Step-by-step instructions on how to install and run your server.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/your-repo-name.git
+git clone https://github.com/merowech/vbs-backend.git
 
 # Change directory
-cd your-repo-name
+cd vbs-backend
 
 # Use docker-compose
-docker-compose up
+docker-compose up --build
 ```
 
 
@@ -92,6 +101,8 @@ docker-compose up
 {
   "query": "Your Text Query Here",
   "k": 5,
+  "dataset": "Dataset Name",
+  "model": "Model Name",
   "get_embeddings": false
 }
 ```
@@ -156,7 +167,7 @@ See `tests\test_imageQuery.sh` for an example.
 
 ### Get Video Image
 
-**Endpoint:** `/getVideoImage`
+**Endpoint:** `/getVideoFrames`
 
 **Method:** GET
 
