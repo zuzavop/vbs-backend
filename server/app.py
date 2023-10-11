@@ -41,7 +41,7 @@ async def text_query(query_params: dict, get_embeddings: bool = False):
         video_id, frame_id = ids.decode('utf-8').split('_', 1)
 
         tmp_dict = {
-            'uri': ids,
+            'uri': f'{video_id}/{ids}.jpg',
             'rank': rank,
             'score': score,
             'id': [video_id, frame_id],
@@ -83,7 +83,7 @@ async def image_query(
             video_id, frame_id = ids.decode('utf-8').split('_', 1)
 
             tmp_dict = {
-                'uri': ids,
+                'uri': f'{video_id}/{ids}.jpg',
                 'rank': rank,
                 'score': score,
                 'id': [video_id, frame_id],
@@ -129,7 +129,7 @@ async def image_query_by_id(
             video_id, frame_id = ids.decode('utf-8').split('_', 1)
 
             tmp_dict = {
-                'uri': ids,
+                'uri': f'{video_id}/{ids}.jpg',
                 'rank': rank,
                 'score': score,
                 'id': [video_id, frame_id],
