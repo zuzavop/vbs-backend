@@ -1,3 +1,5 @@
 #!/bin/sh
 
-curl -F "image=@image.jpg" -F "k=1000" http://localhost:8000/imageQuery/
+query='{"k":1000}'
+
+curl -F "image=@image.jpg" -F "query_params=$query" http://localhost:8000/imageQuery/
