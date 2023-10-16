@@ -110,32 +110,44 @@ def get_images_by_image_query(image: Image, k: int):
 
 
 def get_video_images_by_id(id: str, k: int):
-    # Load ids
+    # Load data from the database
+    # Get an array of video IDs from the database
     data = db.get_data()
     ids = np.array(db.get_ids())
 
+    # Find the index of the provided 'id' within the 'ids' array
     idx = np.where(ids == id.encode('utf-8'))[0][0]
 
+    # Extract a slice of 'k' elements centered around the found index
     ids = ids[idx - k : idx + k]
     features = data[idx - k : idx + k]
 
+    # Combine the selected IDs and features into a list of tuples
     video_images = list(zip(ids.tolist(), features.tolist()))
 
+    # Return a list of (ID, feature) pairs
     return video_images
 
 
 def get_random_video_frame():
-    # Load ids
+    # Load data from the database
+    # Get an array of video IDs from the database
     data = db.get_data()
     ids = np.array(db.get_ids())
 
-    random_id = np.random.choice(ids, size=1, replace=True)
+    # Generate a random index within the valid range of IDs
+    random_id = np.random.randint(0, len(ids))
 
-    selected_ids = ids[random_id]
-    selected_features = data[random_id]
+    # Select a single ID using the random index
+    selected_ids = ids[random_id:random_id]
 
+    # Select the corresponding data or features using the random index
+    selected_features = data[random_id:random_id]
+
+    # Combine the selected IDs and features into a list of tuples
     video_images = list(zip(ids.tolist(), features.tolist()))
 
+    # Return a list of (ID, feature) pairs
     return video_images
 
 
