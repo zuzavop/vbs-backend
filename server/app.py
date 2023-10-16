@@ -1,3 +1,5 @@
+import logger as l
+
 import json
 import logging
 
@@ -9,7 +11,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import features as fs
 import database as db
-import logger as l
 
 
 # Create an instance of the FastAPI class
@@ -222,11 +223,13 @@ async def get_video(video_id: str):
 
 
 # Define the 'getRandomFrame' route
-@app.get('/getRandomFrame')
+@app.get('/getRandomFrame/')
 async def get_random_frame():
     '''
     Get URI of random frame.
     '''
+    add_features = False
+
     # Call the function to retrieve a random video frame
     images = fs.get_random_video_frame()
 

@@ -96,6 +96,8 @@ def load_features():
 
                 del h5_file
 
+        print(len(tmp_ids))
+
         # Concatenate list of ids to one ids array
         ids = np.concatenate(tmp_ids, axis=0)
         del tmp_ids

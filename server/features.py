@@ -139,10 +139,10 @@ def get_random_video_frame():
     random_id = np.random.randint(0, len(ids))
 
     # Select a single ID using the random index
-    selected_ids = ids[random_id:random_id]
+    selected_ids = ids[random_id : random_id + 1]
 
     # Select the corresponding data or features using the random index
-    selected_features = data[random_id:random_id]
+    selected_features = data[random_id : random_id + 1]
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(zip(selected_ids.tolist(), selected_features.tolist()))
