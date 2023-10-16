@@ -145,7 +145,7 @@ def get_random_video_frame():
     selected_features = data[random_id:random_id]
 
     # Combine the selected IDs and features into a list of tuples
-    video_images = list(zip(ids.tolist(), features.tolist()))
+    video_images = list(zip(selected_ids.tolist(), selected_features.tolist()))
 
     # Return a list of (ID, feature) pairs
     return video_images
