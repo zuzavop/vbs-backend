@@ -228,7 +228,7 @@ async def get_random_frame():
     Get URI of random frame.
     '''
     # Call the function to retrieve a random video frame
-    video_image = fs.get_random_video_frame()
+    images = fs.get_random_video_frame()
 
     # Create return dictionary
     ret_dict = []
