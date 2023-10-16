@@ -109,10 +109,33 @@ def get_images_by_image_query(image: Image, k: int):
     return most_similar_samples
 
 
-def get_video_image_by_id(video_id: str, frame_id: str):
-    # In a real application, you would fetch video images based on the video ID.
-    # Here, we're returning dummy data for demonstration purposes.
-    video_images = [f'Image {i} for Video ID {video_id}' for i in range(1, k + 1)]
+def get_video_images_by_id(id: str, k: int):
+    # Load ids
+    data = db.get_data()
+    ids = np.array(db.get_ids())
+
+    idx = np.where(ids == id.encode('utf-8'))[0][0]
+
+    ids = ids[idx - k : idx + k]
+    features = data[idx - k : idx + k]
+
+    video_images = list(zip(ids.tolist(), features.tolist()))
+
+    return video_images
+
+
+def get_random_video_frame():
+    # Load ids
+    data = db.get_data()
+    ids = np.array(db.get_ids())
+
+    random_id = np.random.choice(ids, size=1, replace=True)
+
+    selected_ids = ids[random_id]
+    selected_features = data[random_id]
+
+    video_images = list(zip(ids.tolist(), features.tolist()))
+
     return video_images
 
 

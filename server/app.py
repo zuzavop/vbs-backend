@@ -1,10 +1,11 @@
-from fastapi import FastAPI, File, Query, Body, UploadFile, Form
-
 import json
 import logging
 
 from PIL import Image
 from io import BytesIO
+
+from fastapi import FastAPI, File, Query, Body, UploadFile, Form
+from fastapi.middleware.cors import CORSMiddleware
 
 import features as fs
 import database as db
@@ -13,6 +14,16 @@ import logger as l
 
 # Create an instance of the FastAPI class
 app = FastAPI()
+
+origins = ['http://localhost', 'http://acheron.ms.mff.cuni.cz/']
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 # Load features into the database
 db.load_features()
@@ -105,7 +116,7 @@ async def image_query(
         return ret_dict
 
     except Exception as e:
-        return {"error": str(e)}
+        return {'error': str(e)}
 
 
 # Define the 'imageQueryByID' route
@@ -158,31 +169,85 @@ async def image_query_by_id(
         return ret_dict
 
     except Exception as e:
-        return {"error": str(e)}
+        return {'error': str(e)}
 
 
 # Define the 'getVideoFrames' route
-@app.get('/getVideoFrames')
-async def get_video_frames(video_id: str, frame_id: str):
+@app.post('/getVideoFrames/')
+async def get_video_frames(query_params: dict):
     '''
     Get a list of video images based on a video ID.
     '''
-    # Call the function to retrieve video images
-    video_image = fs.get_video_image_by_id(video_id, frame_id)
+    l.logger.info(query_params)
 
-    return {'video_id': video_id, 'frame_id': frame_id, 'video_image': video_image}
+    id = query_params.get('item_id', '')
+    k = min(query_params.get('k', 100), 10000)
+    dataset = query_params.get('dataset', '')
+    model = query_params.get('model', '')
+    add_features = bool(query_params.get('add_features', 0))
+
+    # Call the function to retrieve video images
+    images = fs.get_video_images_by_id(id, k)
+
+    # Create return dictionary
+    ret_dict = []
+    for ids, features in images:
+        if not add_features:
+            features = []
+
+        ids = ids.decode('utf-8')
+        video_id, frame_id = ids.split('_', 1)
+
+        tmp_dict = {
+            'uri': f'{video_id}/{ids}.jpg',
+            'id': [video_id, frame_id],
+            'features': features,
+            'label': None,
+        }
+        ret_dict.append(tmp_dict)
+
+    return ret_dict
 
 
 # Define the 'getVideo' route
 @app.get('/getVideo')
 async def get_video(video_id: str):
     '''
-    Get a list of video images based on a video ID.
+    Get URI of video.
     '''
     # Call the function to retrieve video images
     video_image = fs.get_video_image_by_id(video_id, frame_id)
 
     return {'video_id': video_id, 'frame_id': frame_id, 'video_image': video_image}
+
+
+# Define the 'getRandomFrame' route
+@app.get('/getRandomFrame')
+async def get_random_frame():
+    '''
+    Get URI of random frame.
+    '''
+    # Call the function to retrieve a random video frame
+    video_image = fs.get_random_video_frame()
+
+    # Create return dictionary
+    ret_dict = []
+    for ids, features in images:
+        if not add_features:
+            features = []
+
+        ids = ids.decode('utf-8')
+        video_id, frame_id = ids.split('_', 1)
+
+        tmp_dict = {
+            'uri': f'{video_id}/{ids}.jpg',
+            'id': [video_id, frame_id],
+            'features': features,
+            'label': None,
+        }
+        ret_dict.append(tmp_dict)
+
+    return ret_dict
 
 
 # Define a route and its handler function
