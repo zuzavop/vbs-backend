@@ -16,7 +16,7 @@ import database as db
 # Create an instance of the FastAPI class
 app = FastAPI()
 
-origins = ['http://localhost', 'http://acheron.ms.mff.cuni.cz/']
+origins = ["*"]  # ['http://localhost', 'http://acheron.ms.mff.cuni.cz/']
 
 app.add_middleware(
     CORSMiddleware,
