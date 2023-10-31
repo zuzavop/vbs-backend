@@ -1,11 +1,12 @@
 import open_clip
 
+from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
+
 import configs as c
 
 
-loaded_model = None
-loaded_tokenizer = None
-loaded_preprocess = None
+# List available models
+available_models = ['clip-laion', 'clip-openai']
 
 
 # Load functions for the open clip LAION model
@@ -19,9 +20,81 @@ def load_laion():
     return model, tokenizer, preprocess
 
 
-# Selector for the load model
-load_function = load_laion
-if c.MODEL == 'laion':
-    load_function = load_laion
+# Embed text using LAION
+def embed_text_laion(text):
+    model, tokenizer, _ = load_laion()
 
-loaded_model, loaded_tokenizer, loaded_preprocess = load_function()
+    query_tokens = tokenizer(text)
+    text_features = model.encode_text(query_tokens).detach().cpu().numpy().flatten()
+
+    return text_features
+
+
+# Embed image using LAION
+def embed_image_laion(image):
+    model, _, preprocess = load_laion()
+
+    query_image = preprocess(image).unsqueeze(0)
+    image_features = model.encode_image(query_image).detach().cpu().numpy().flatten()
+
+    return image_features
+
+
+# Load functions for the Open CLIP model
+def load_open_clip():
+    # Load model and tokenizer via transformers
+    processor = AutoProcessor.from_pretrained('openai/clip-vit-large-patch14')
+    model = AutoModelForZeroShotImageClassification.from_pretrained(
+        'openai/clip-vit-large-patch14'
+    )
+
+    return model, processor
+
+
+# Embed text using Open CLIP
+def embed_text_open_clip(text):
+    model, processor = load_open_clip()
+
+    inputs = processor(
+        text=[text],
+        return_tensors="pt",
+        padding=True,
+    )
+    outputs = model(**inputs)
+
+    return outputs.text_embeds
+
+
+# Embed image using Open CLIP
+def embed_image_open_clip(image):
+    model, processor = load_open_clip()
+
+    inputs = processor(
+        images=image,
+        return_tensors="pt",
+        padding=True,
+    )
+    outputs = model(**inputs)
+
+    return outputs.image_embeds
+
+
+def embed_text(text, model):
+    # Check if the specified model is 'clip-laion'
+    if 'clip-laion' in model:
+        return embed_text_laion(text)
+    # If the model is 'clip-openai', call the function for OpenAI's CLIP model
+    elif 'clip-openai' in model:
+        return embed_text_open_clip(text)
+
+
+def embed_image(image, model):
+    # Check if the specified model is 'clip-laion'
+    if 'clip-laion' in model:
+        return embed_image_laion(image)
+    # If the model is 'clip-openai', call the function for OpenAI's CLIP model
+    elif 'clip-openai' in model:
+        return embed_image_open_clip(image)
+
+
+load_laion()

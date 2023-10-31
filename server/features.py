@@ -1,7 +1,6 @@
 import h5py
 import time
 import numpy as np
-import open_clip
 
 from PIL import Image
 
@@ -21,16 +20,15 @@ def get_cosine_ranking(query_vector, matrix):
     return nearest_neighbors, dot_product
 
 
-def get_images_by_text_query(query: str, k: int):
+def get_images_by_text_query(query: str, k: int, dataset: str = '', model: str = ''):
     start_time = time.time()
 
-    # Load model depending on selcted model
-    model = m.loaded_model
-    tokenizer = m.loaded_tokenizer
+    # Check if model is available
+    if not model in m.available_models:
+        model = m.available_models[0]
 
     # Tokenize query input and encode the data using the selected model
-    query_tokens = tokenizer(query)
-    text_features = model.encode_text(query_tokens).detach().cpu().numpy().flatten()
+    text_features = m.embed_text(query, model)
 
     # Normalize vector to make it smaller and for cosine calculcation
     text_features = text_features / np.linalg.norm(text_features)
@@ -65,16 +63,15 @@ def get_images_by_text_query(query: str, k: int):
     return most_similar_samples
 
 
-def get_images_by_image_query(image: Image, k: int):
+def get_images_by_image_query(image: Image, k: int, dataset: str = '', model: str = ''):
     start_time = time.time()
 
-    # Load model depending on selcted model
-    model = m.loaded_model
-    preprocess = m.loaded_preprocess
+    # Check if model is available
+    if not model in m.available_models:
+        model = m.available_models[0]
 
     # Preprocess query input and encode the data using the selected model
-    query_image = preprocess(image).unsqueeze(0)
-    image_features = model.encode_image(query_image).detach().cpu().numpy().flatten()
+    image_features = m.embed_image(image, model)
 
     # Normalize vector to make it smaller and for cosine calculcation
     image_features = image_features / np.linalg.norm(image_features)
@@ -149,9 +146,3 @@ def get_random_video_frame():
 
     # Return a list of (ID, feature) pairs
     return video_images
-
-
-# # Use a pipeline as a high-level helper
-# from transformers import pipeline
-
-# pipe = pipeline("zero-shot-image-classification", model="openai/clip-vit-large-patch14")

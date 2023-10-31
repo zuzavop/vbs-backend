@@ -5,9 +5,22 @@ import dill
 import h5py
 import time
 
+import numpy as np
+
 from tqdm import tqdm
 
 
+# Class structure to store data and indices
+class memory_data_storage:
+    DATA = None
+    IDS = None
+
+    def __init__(self, new_data, new_ids):
+        self.DATA = new_data
+        self.IDS = new_ids
+
+
+# Normalization
 def normalize(data):
     data = data / np.linalg.norm(data, axis=1, keepdims=True)
     return data
@@ -15,12 +28,18 @@ def normalize(data):
 
 def load_and_save_features(DATABASE_ROOT, MODEL):
     # Specify the root directory you want to start walking from
-    root_directory = os.path.join(DATABASE_ROOT, f'features-{MODEL}')
+    root_directory = os.path.dirname(DATABASE_ROOT)
+
+    # Get last directory for the dataset name
+    last_directory = os.path.basename(DATABASE_ROOT)
+    print(f'Start with {MODEL} for {last_directory} on {root_directory}')
 
     # Internal storage
     internal_storage = os.path.join(
-        DATABASE_ROOT, f'processed/pickled_files_{MODEL}.pkl'
+        root_directory, f'processed/{last_directory}__{MODEL}.db.pkl'
     )
+    print(f'Internal Storage at: {internal_storage}')
+
     if not os.path.exists(internal_storage):
         start_time = time.time()
 
@@ -28,7 +47,7 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
         file_paths = []
 
         # Walk through the directory structure
-        for folder, subfolders, files in os.walk(root_directory):
+        for folder, subfolders, files in os.walk(DATABASE_ROOT):
             for file in files:
                 # Join the folder and file name to create the full file path
                 file_path = os.path.join(folder, file)
@@ -57,7 +76,7 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
 
                 del h5_file
 
-        print(len(tmp_ids))
+        print(f'Features collected: {len(tmp_ids)}')
 
         # Concatenate list of ids to one ids array
         ids = np.concatenate(tmp_ids, axis=0)
@@ -69,7 +88,7 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
         data = normalize(data)
 
         # store data and ids in memory
-        set_data(data, ids)
+        DATA = memory_data_storage(data, ids)
 
         del data
         del ids

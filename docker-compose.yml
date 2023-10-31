@@ -1,12 +1,22 @@
 version: "3"
 services:
+
+  preprocess:
+    build:
+      context: .
+      dockerfile: Dockerfile-preprocess
+    volumes:
+      - "${DATA_PATH}:/data/vbs/"
+
   data-layer:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile-server
     ports:
-      # - "8000:8000"
       - "80:80"
     volumes:
       - ./server:/app  # Mount the local app directory to /app in the container
-      - /mnt/datasets/vbs/:/data/vbs/
+      - "${DATA_PATH}:/data/vbs/"
+    depends_on:
+      preprocess:
+        condition: service_completed_successfully

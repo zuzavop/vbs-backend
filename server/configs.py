@@ -1,4 +1,5 @@
-MODEL = 'laion'  # currently only laion
 DATABASE_ROOT = '/data/vbs/'
 DATABASE_IMAGES = '/data/vbs/images/'
-DATABASE_PROCESSED = '/data/vbs/processed/'
+
+BASE_MODEL = 'clip-laion'
+BASE_DATASET = 'V3C'

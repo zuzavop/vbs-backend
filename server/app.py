@@ -16,7 +16,7 @@ import database as db
 # Create an instance of the FastAPI class
 app = FastAPI()
 
-origins = ["*"]  # ['http://localhost', 'http://acheron.ms.mff.cuni.cz/']
+origins = ['*']  # ['http://localhost', 'http://acheron.ms.mff.cuni.cz/']
 
 app.add_middleware(
     CORSMiddleware,
@@ -45,7 +45,7 @@ async def text_query(query_params: dict):
     add_features = bool(query_params.get('add_features', 0))
 
     # Call the function to retrieve images
-    images = fs.get_images_by_text_query(query, k)
+    images = fs.get_images_by_text_query(query, k, dataset, model)
 
     # Create return dictionary
     ret_dict = []
@@ -93,7 +93,7 @@ async def image_query(
         # Open the image using Pillow (PIL)
         uploaded_image = Image.open(BytesIO(image_data))
 
-        images = fs.get_images_by_image_query(uploaded_image, k)
+        images = fs.get_images_by_image_query(uploaded_image, k, dataset, model)
 
         # Create return dictionary
         ret_dict = []
@@ -123,9 +123,7 @@ async def image_query(
 # Define the 'imageQueryByID' route
 @app.post('/imageQueryByID/')
 async def image_query_by_id(
-    video_id: str,
-    frame_id: str,
-    query_params: str = Form(...),
+    query_params: str = dict,
 ):
     '''
     Get a list of images based on an image query.
@@ -133,6 +131,8 @@ async def image_query_by_id(
     query_params = json.loads(query_params)
     l.logger.info(query_params)
 
+    video_id = query_params.get('video_id', '')
+    frame_id = query_params.get('frame_id', '')
     k = min(query_params.get('k', 100), 10000)
     dataset = query_params.get('dataset', '')
     model = query_params.get('model', '')
