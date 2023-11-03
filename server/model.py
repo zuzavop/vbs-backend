@@ -9,13 +9,30 @@ import configs as c
 available_models = ['clip-laion', 'clip-openai']
 
 
+# Store in memory as long as possible
+cur_model_sel = ''
+cur_model = None
+
+
 # Load functions for the open clip LAION model
 def load_laion():
-    # Load model and tokenizer via open clip
-    model, _, preprocess = open_clip.create_model_and_transforms(
-        'hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K'
-    )
-    tokenizer = open_clip.get_tokenizer('hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K')
+    global cur_model_sel
+    global cur_model
+
+    if cur_model_sel != 'clip-laion':
+        # Load model and tokenizer via open clip
+        model, _, preprocess = open_clip.create_model_and_transforms(
+            'hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K'
+        )
+        tokenizer = open_clip.get_tokenizer(
+            'hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K'
+        )
+
+        cur_model_sel = 'clip-laion'
+        cur_model = (model, tokenizer, preprocess)
+
+    else:
+        model, tokenizer, preprocess = cur_model
 
     return model, tokenizer, preprocess
 
@@ -25,7 +42,8 @@ def embed_text_laion(text):
     model, tokenizer, _ = load_laion()
 
     query_tokens = tokenizer(text)
-    text_features = model.encode_text(query_tokens).detach().cpu().numpy().flatten()
+    # text_features = model.encode_text(query_tokens).detach().cpu().numpy().flatten()
+    text_features = model.encode_text(query_tokens).detach().cpu().flatten()
 
     return text_features
 
@@ -35,18 +53,29 @@ def embed_image_laion(image):
     model, _, preprocess = load_laion()
 
     query_image = preprocess(image).unsqueeze(0)
-    image_features = model.encode_image(query_image).detach().cpu().numpy().flatten()
+    # image_features = model.encode_image(query_image).detach().cpu().numpy().flatten()
+    image_features = model.encode_image(query_image).detach().cpu().flatten()
 
     return image_features
 
 
 # Load functions for the Open CLIP model
 def load_open_clip():
-    # Load model and tokenizer via transformers
-    processor = AutoProcessor.from_pretrained('openai/clip-vit-large-patch14')
-    model = AutoModelForZeroShotImageClassification.from_pretrained(
-        'openai/clip-vit-large-patch14'
-    )
+    global cur_model_sel
+    global cur_model
+
+    if cur_model_sel != 'clip-openai':
+        # Load model and tokenizer via transformers
+        processor = AutoProcessor.from_pretrained('openai/clip-vit-large-patch14')
+        model = AutoModelForZeroShotImageClassification.from_pretrained(
+            'openai/clip-vit-large-patch14'
+        )
+
+        cur_model_sel = 'clip-openai'
+        cur_model = (model, processor)
+
+    else:
+        model, processor = cur_model
 
     return model, processor
 

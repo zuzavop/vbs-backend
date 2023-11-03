@@ -33,14 +33,16 @@ for file in db_pkl_files:
     datasets_and_features.append([dataset_name, feature_name, file])
 
 
-# Class structure to store data and indices
+# Class structure to store data, indices, and labels
 class memory_data_storage:
     DATA = None
     IDS = None
+    LABELS = None
 
-    def __init__(self, new_data, new_ids):
+    def __init__(self, new_data=None, new_ids=None, new_labels=None):
         self.DATA = new_data
         self.IDS = new_ids
+        self.LABELS = new_labels
 
 
 DATA = None
@@ -55,9 +57,13 @@ def get_ids():
     return DATA.IDS
 
 
-def set_data(new_data, new_ids):
+def get_labels():
+    return DATA.LABELS
+
+
+def set_data(new_data=None, new_ids=None, new_labels=None):
     global DATA
-    DATA = memory_data_storage(new_data, new_ids)
+    DATA = memory_data_storage(new_data, new_ids, new_labels)
 
 
 def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):

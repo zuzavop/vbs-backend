@@ -1,5 +1,6 @@
 import h5py
 import time
+import torch
 import numpy as np
 
 from PIL import Image
@@ -13,10 +14,11 @@ import model as m
 
 def get_cosine_ranking(query_vector, matrix):
     # Get the dot product for every entry
-    dot_product = np.matmul(query_vector, matrix.T)
+    dot_product = torch.matmul(query_vector, matrix.T)
 
     # Sort for the indices of the nearest neighbors
-    nearest_neighbors = np.argsort(-dot_product)
+    nearest_neighbors = torch.argsort(-dot_product)
+
     return nearest_neighbors, dot_product
 
 
@@ -31,24 +33,25 @@ def get_images_by_text_query(query: str, k: int, dataset: str = '', model: str =
     text_features = m.embed_text(query, model)
 
     # Normalize vector to make it smaller and for cosine calculcation
-    text_features = text_features / np.linalg.norm(text_features)
+    text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
     # Load data
     data = db.get_data()
     ids = np.array(db.get_ids())
+    labels = db.get_labels()
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(text_features, data)
     sorted_indices = sorted_indices[:k]
-    similarities = similarities[sorted_indices]
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
             ids[sorted_indices].tolist(),
             [i for i in range(len(sorted_indices))],
-            similarities.tolist(),
+            similarities[sorted_indices].tolist(),
             data[sorted_indices].tolist(),
+            labels[sorted_indices].tolist(),
         )
     )
 
@@ -57,6 +60,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str = '', model: str =
 
     del data
     del ids
+    del labels
     del similarities
     del sorted_indices
 
@@ -74,24 +78,25 @@ def get_images_by_image_query(image: Image, k: int, dataset: str = '', model: st
     image_features = m.embed_image(image, model)
 
     # Normalize vector to make it smaller and for cosine calculcation
-    image_features = image_features / np.linalg.norm(image_features)
+    image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
     # Load data
     data = db.get_data()
     ids = np.array(db.get_ids())
+    labels = db.get_labels()
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(image_features, data)
     sorted_indices = sorted_indices[:k]
-    similarities = similarities[sorted_indices]
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
             ids[sorted_indices].tolist(),
             [i for i in range(len(sorted_indices))],
-            similarities.tolist(),
+            similarities[sorted_indices].tolist(),
             data[sorted_indices].tolist(),
+            labels[sorted_indices].tolist(),
         )
     )
 
@@ -100,6 +105,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str = '', model: st
 
     del data
     del ids
+    del labels
     del similarities
     del sorted_indices
 

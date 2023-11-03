@@ -49,7 +49,7 @@ async def text_query(query_params: dict):
 
     # Create return dictionary
     ret_dict = []
-    for ids, rank, score, features in images:
+    for ids, rank, score, features, labels in images:
         if not add_features:
             features = []
 
@@ -62,7 +62,7 @@ async def text_query(query_params: dict):
             'score': score,
             'id': [video_id, frame_id],
             'features': features,
-            'label': None,
+            'label': labels,
         }
         ret_dict.append(tmp_dict)
 
@@ -97,7 +97,7 @@ async def image_query(
 
         # Create return dictionary
         ret_dict = []
-        for ids, rank, score, features in images:
+        for ids, rank, score, features, labels in images:
             if not add_features:
                 features = []
 
@@ -110,7 +110,7 @@ async def image_query(
                 'score': score,
                 'id': [video_id, frame_id],
                 'features': features,
-                'label': None,
+                'label': labels,
             }
             ret_dict.append(tmp_dict)
 
@@ -150,7 +150,7 @@ async def image_query_by_id(
 
         # Create return dictionary
         ret_dict = []
-        for ids, rank, score, features in images:
+        for ids, rank, score, features, labels in images:
             if not get_embeddings:
                 features = []
 
@@ -163,7 +163,7 @@ async def image_query_by_id(
                 'score': score,
                 'id': [video_id, frame_id],
                 'features': features,
-                'label': None,
+                'label': labels,
             }
             ret_dict.append(tmp_dict)
 

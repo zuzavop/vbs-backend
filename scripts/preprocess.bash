@@ -5,7 +5,7 @@ directory_path="/data/vbs"
 echo "Data directory: $directory_path"
 
 # Define an array
-my_array=("clip-laion" "clip-openai") # "aladin"
+my_array=("clip-laion") # "clip-openai" "aladin"
 
 
 # Check if the directory exists
@@ -23,6 +23,7 @@ if [ -d "$directory_path" ]; then
           for element in "${my_array[@]}"; do
             if [[ $(basename "$file") == *"$element"* ]]; then
               echo "Found $element in $file"
+              python create_noun_db_from_nounlist.py --base-dir "$subdirectory" --model-name "$element"
               if [[ "$file" == *.tar.gz ]]; then
 
                 # Extract the content only if not already extracted
@@ -42,7 +43,7 @@ if [ -d "$directory_path" ]; then
                 fi
 
                 # Create processed data from the found features
-                python create_processed_features.py --base-dir "$extraction_directory" --model-name "$element"
+                python create_db_from_processed_features.py --base-dir "$extraction_directory" --model-name "$element"
               fi
             fi
           done

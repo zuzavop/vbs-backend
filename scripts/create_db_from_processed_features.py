@@ -5,25 +5,31 @@ import dill
 import h5py
 import time
 
+import torch
+
 import numpy as np
 
 from tqdm import tqdm
 
 
-# Class structure to store data and indices
+# Class structure to store data, indices, and labels
 class memory_data_storage:
     DATA = None
     IDS = None
+    LABELS = None
 
-    def __init__(self, new_data, new_ids):
+    def __init__(self, new_data=None, new_ids=None, new_labels=None):
         self.DATA = new_data
         self.IDS = new_ids
+        self.LABELS = new_labels
 
 
 # Normalization
-def normalize(data):
-    data = data / np.linalg.norm(data, axis=1, keepdims=True)
-    return data
+# def normalize(data):
+#     data = data / np.linalg.norm(data, axis=1, keepdims=True)
+#     return data
+def normalize(features):
+    return features / features.norm(dim=-1, keepdim=True)
 
 
 def load_and_save_features(DATABASE_ROOT, MODEL):
@@ -60,12 +66,14 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
         for file_path in tqdm(file_paths):
             if 'hdf5' in file_path:
                 h5_file = h5py.File(file_path, 'r')
-                tmp_data.append(np.array(h5_file['data']))
+                # tmp_data.append(np.array(h5_file['data']))
+                tmp_data.append(torch.from_numpy(h5_file['data'][:]))
 
                 del h5_file
 
         # Concatenate list of data to one data array
-        data = np.concatenate(tmp_data, axis=0)
+        # data = np.concatenate(tmp_data, axis=0)
+        data = torch.cat(tmp_data)
         del tmp_data
 
         tmp_ids = []
@@ -73,6 +81,7 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
             if 'hdf5' in file_path:
                 h5_file = h5py.File(file_path, 'r')
                 tmp_ids.append(np.array(h5_file['ids']))
+                # tmp_ids.append(torch.from_numpy(h5_file['ids'][:]))
 
                 del h5_file
 
@@ -80,20 +89,41 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
 
         # Concatenate list of ids to one ids array
         ids = np.concatenate(tmp_ids, axis=0)
+        # data = torch.cat(tmp_data)
         del tmp_ids
 
         del file_paths
 
-        # normalize to reduce numbers
+        # Normalize to reduce numbers
         data = normalize(data)
 
-        # store data and ids in memory
-        DATA = memory_data_storage(data, ids)
+        top_k = 10
 
+        # Load label embeddings
+        label_embeddings = [
+            os.path.join(root_directory, f)
+            for f in os.listdir(root_directory)
+            if f.endswith('.ptt')
+        ]
+        print(f'Found {label_embeddings} embeddings')
+        labels = []
+        for label_embedding in label_embeddings:
+            label_embeds = torch.load(label_embedding)
+            for image in data:
+                similarity = 100.0 * image @ label_embeds.T
+                _, indices = similarity.topk(top_k)
+                labels.append(indices)
+            labels = torch.stack(labels)
+
+        # Store data and ids in memory
+        DATA = memory_data_storage(data, ids, labels)
+
+        # Delete unused stuff
         del data
         del ids
+        del labels
 
-        # store data and ids on hard drive
+        # Store data and ids on hard drive
         os.makedirs(os.path.dirname(internal_storage), exist_ok=True)
         with open(internal_storage, 'wb+') as f:
             dill.dump(DATA, f)
@@ -105,13 +135,15 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
         print('File already exists')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Create an ArgumentParser object
-    parser = argparse.ArgumentParser(description="Script with two named arguments")
+    parser = argparse.ArgumentParser(
+        description='Script to load stored features from hdf5 and convert it to one pickle file.'
+    )
 
     # Define the arguments
-    parser.add_argument('--base-dir', required=True, help="Base data directory")
-    parser.add_argument('--model-name', required=True, help="Model name")
+    parser.add_argument('--base-dir', required=True, help='Base data directory')
+    parser.add_argument('--model-name', required=True, help='Model name')
 
     # Parse the command-line arguments
     args = parser.parse_args()
