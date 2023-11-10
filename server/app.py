@@ -10,6 +10,8 @@ from io import BytesIO
 
 from fastapi import FastAPI, File, Query, Body, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 import features as fs
 import database as db
@@ -72,7 +74,7 @@ async def text_query(query_params: dict):
     execution_time = time.time() - start_time
     l.logger.info(f'/textQuery: {execution_time:.6f} secs')
 
-    return ret_dict
+    return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define the 'imageQuery' route
@@ -127,7 +129,7 @@ async def image_query(
     execution_time = time.time() - start_time
     l.logger.info(f'/imageQuery: {execution_time:.6f} secs')
 
-    return ret_dict
+    return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define the 'imageQueryByID' route
@@ -184,7 +186,7 @@ async def image_query_by_id(
     execution_time = time.time() - start_time
     l.logger.info(f'/imageQueryByID: {execution_time:.6f} secs')
 
-    return ret_dict
+    return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define the 'getVideoFrames' route
@@ -225,7 +227,7 @@ async def get_video_frames(query_params: dict):
     execution_time = time.time() - start_time
     l.logger.info(f'/getVideoFrames: {execution_time:.6f} secs')
 
-    return ret_dict
+    return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define the 'getVideo' route
@@ -274,7 +276,7 @@ async def get_random_frame():
         }
         ret_dict.append(tmp_dict)
 
-    return ret_dict
+    return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define a route and its handler function
