@@ -1,4 +1,5 @@
 import logger as l
+import configs as c
 
 import time
 import json
@@ -42,8 +43,8 @@ async def text_query(query_params: dict):
 
     query = query_params.get('query', '')
     k = min(query_params.get('k', 100), 10000)
-    dataset = query_params.get('dataset', '')
-    model = query_params.get('model', '')
+    dataset = query_params.get('dataset', c.BASE_DATASET)
+    model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
 
     # Call the function to retrieve images
@@ -88,8 +89,8 @@ async def image_query(
     l.logger.info(query_params)
 
     k = min(query_params.get('k', 100), 10000)
-    dataset = query_params.get('dataset', '')
-    model = query_params.get('model', '')
+    dataset = query_params.get('dataset', c.BASE_DATASET)
+    model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
 
     try:
@@ -144,8 +145,8 @@ async def image_query_by_id(
     video_id = query_params.get('video_id', '')
     frame_id = query_params.get('frame_id', '')
     k = min(query_params.get('k', 100), 10000)
-    dataset = query_params.get('dataset', '')
-    model = query_params.get('model', '')
+    dataset = query_params.get('dataset', c.BASE_DATASET)
+    model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
 
     # Call the function to retrieve images
@@ -197,8 +198,8 @@ async def get_video_frames(query_params: dict):
 
     id = query_params.get('item_id', '')
     k = min(query_params.get('k', 100), 10000)
-    dataset = query_params.get('dataset', '')
-    model = query_params.get('model', '')
+    dataset = query_params.get('dataset', c.BASE_DATASET)
+    model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
 
     # Call the function to retrieve video images
