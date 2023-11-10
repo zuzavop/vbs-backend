@@ -83,12 +83,12 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     l.logger.info('Start to load pre-generated embeddings')
     start_time = time.time()
 
-    print(dataset, model)
+    l.logger.info(dataset, model)
     # Check available models and datasets
     file_path = None
     for dataset_and_feature in datasets_and_features:
         cur_dataset, cur_model, cur_file = dataset_and_feature
-        print(cur_dataset, cur_model, cur_file)
+        l.logger.info(cur_dataset, cur_model, cur_file)
         if file == dataset and cur_model == model:
             file_path = cur_file
             break
