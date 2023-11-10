@@ -70,28 +70,31 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     global DATA
     global CUR_SELECTION
 
+    # Check if dataset and model are already loaded
     if [dataset, model] == CUR_SELECTION:
         return
-
     CUR_SELECTION = [dataset, model]
 
     l.logger.info('Start to load pre-generated embeddings')
     start_time = time.time()
 
+    # Check available models and datasets
+    file_path = None
     for dataset_and_feature in datasets_and_features:
         cur_dataset, cur_model, cur_file = dataset_and_feature
-        if cur_dataset == dataset and cur_model == model:
+        if file == dataset and cur_model == model:
+            file_path = cur_file
             break
 
-    # read data and ids from hard drive
-    with open(cur_file, 'rb') as f:
-        DATA = dill.load(f)
+    if file_path:
+        # read data and ids from hard drive
+        with open(file_path, 'rb') as f:
+            DATA = dill.load(f)
 
-    execution_time = time.time() - start_time
-    l.logger.info(f'Reading in features took: {execution_time:.6f} secs')
-
-    l.logger.info(get_data().shape)
-    l.logger.info('Finished to load pre-generated embeddings')
+        execution_time = time.time() - start_time
+        l.logger.info(f'Reading in features took: {execution_time:.6f} secs')
+        l.logger.info(get_data().shape)
+        l.logger.info('Finished to load pre-generated embeddings')
 
 
 def load_msb(video_id, frame_id):

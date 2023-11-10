@@ -36,6 +36,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str = '', model: str =
     text_features = text_features / text_features.norm(dim=-1, keepdim=True)
 
     # Load data
+    db.load_features(dataset, model)
     data = db.get_data()
     ids = np.array(db.get_ids())
     labels = db.get_labels()
@@ -81,6 +82,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str = '', model: st
     image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
     # Load data
+    db.load_features(dataset, model)
     data = db.get_data()
     ids = np.array(db.get_ids())
     labels = db.get_labels()
@@ -112,9 +114,10 @@ def get_images_by_image_query(image: Image, k: int, dataset: str = '', model: st
     return most_similar_samples
 
 
-def get_video_images_by_id(id: str, k: int):
+def get_video_images_by_id(id: str, k: int, dataset: str = '', model: str = ''):
     # Load data from the database
     # Get an array of video IDs from the database
+    db.load_features(dataset, model)
     data = db.get_data()
     ids = np.array(db.get_ids())
 
@@ -132,9 +135,10 @@ def get_video_images_by_id(id: str, k: int):
     return video_images
 
 
-def get_random_video_frame():
+def get_random_video_frame(dataset: str = '', model: str = ''):
     # Load data from the database
     # Get an array of video IDs from the database
+    db.load_features(dataset, model)
     data = db.get_data()
     ids = np.array(db.get_ids())
 

@@ -1,5 +1,6 @@
 import logger as l
 
+import time
 import json
 import logging
 
@@ -36,6 +37,7 @@ async def text_query(query_params: dict):
     '''
     Get a list of images based on a text query.
     '''
+    start_time = time.time()
     l.logger.info(query_params)
 
     query = query_params.get('query', '')
@@ -57,7 +59,7 @@ async def text_query(query_params: dict):
         video_id, frame_id = ids.split('_', 1)
 
         tmp_dict = {
-            'uri': f'{video_id}/{ids}.jpg',
+            'uri': f'{dataset}/{video_id}/{ids}.jpg',
             'rank': rank,
             'score': score,
             'id': [video_id, frame_id],
@@ -65,6 +67,9 @@ async def text_query(query_params: dict):
             'label': labels,
         }
         ret_dict.append(tmp_dict)
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/textQuery: {execution_time:.6f} secs')
 
     return ret_dict
 
@@ -78,6 +83,7 @@ async def image_query(
     '''
     Get a list of images based on an image query.
     '''
+    start_time = time.time()
     query_params = json.loads(query_params)
     l.logger.info(query_params)
 
@@ -105,7 +111,7 @@ async def image_query(
             video_id, frame_id = ids.split('_', 1)
 
             tmp_dict = {
-                'uri': f'{video_id}/{ids}.jpg',
+                'uri': f'{dataset}/{video_id}/{ids}.jpg',
                 'rank': rank,
                 'score': score,
                 'id': [video_id, frame_id],
@@ -114,10 +120,13 @@ async def image_query(
             }
             ret_dict.append(tmp_dict)
 
-        return ret_dict
-
     except Exception as e:
-        return {'error': str(e)}
+        ret_dict = {'error': str(e)}
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/imageQuery: {execution_time:.6f} secs')
+
+    return ret_dict
 
 
 # Define the 'imageQueryByID' route
@@ -128,6 +137,7 @@ async def image_query_by_id(
     '''
     Get a list of images based on an image query.
     '''
+    start_time = time.time()
     query_params = json.loads(query_params)
     l.logger.info(query_params)
 
@@ -146,7 +156,7 @@ async def image_query_by_id(
         # Open the image using Pillow (PIL)
         uploaded_image = Image.open(BytesIO(image_data))
 
-        images = fs.get_images_by_image_query(uploaded_image, k)
+        images = fs.get_images_by_image_query(uploaded_image, k, dataset, model)
 
         # Create return dictionary
         ret_dict = []
@@ -158,7 +168,7 @@ async def image_query_by_id(
             video_id, frame_id = ids.split('_', 1)
 
             tmp_dict = {
-                'uri': f'{video_id}/{ids}.jpg',
+                'uri': f'{dataset}/{video_id}/{ids}.jpg',
                 'rank': rank,
                 'score': score,
                 'id': [video_id, frame_id],
@@ -167,10 +177,13 @@ async def image_query_by_id(
             }
             ret_dict.append(tmp_dict)
 
-        return ret_dict
-
     except Exception as e:
-        return {'error': str(e)}
+        ret_dict = {'error': str(e)}
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/imageQueryByID: {execution_time:.6f} secs')
+
+    return ret_dict
 
 
 # Define the 'getVideoFrames' route
@@ -179,6 +192,7 @@ async def get_video_frames(query_params: dict):
     '''
     Get a list of video images based on a video ID.
     '''
+    start_time = time.time()
     l.logger.info(query_params)
 
     id = query_params.get('item_id', '')
@@ -188,7 +202,7 @@ async def get_video_frames(query_params: dict):
     add_features = bool(query_params.get('add_features', 0))
 
     # Call the function to retrieve video images
-    images = fs.get_video_images_by_id(id, k)
+    images = fs.get_video_images_by_id(id, k, dataset, model)
 
     # Create return dictionary
     ret_dict = []
@@ -200,12 +214,15 @@ async def get_video_frames(query_params: dict):
         video_id, frame_id = ids.split('_', 1)
 
         tmp_dict = {
-            'uri': f'{video_id}/{ids}.jpg',
+            'uri': f'{dataset}/{video_id}/{ids}.jpg',
             'id': [video_id, frame_id],
             'features': features,
             'label': None,
         }
         ret_dict.append(tmp_dict)
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/getVideoFrames: {execution_time:.6f} secs')
 
     return ret_dict
 
@@ -216,8 +233,14 @@ async def get_video(video_id: str):
     '''
     Get URI of video.
     '''
+    start_time = time.time()
+    l.logger.info(f'Get video {video_id}')
+
     # Call the function to retrieve video images
     video_image = fs.get_video_image_by_id(video_id, frame_id)
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/getVideo: {execution_time:.6f} secs')
 
     return {'video_id': video_id, 'frame_id': frame_id, 'video_image': video_image}
 
