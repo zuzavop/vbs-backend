@@ -91,7 +91,7 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
         l.logger.info(
             f'Found dataset: {cur_dataset}, model: {cur_model}, file: {cur_file}'
         )
-        if file == dataset and cur_model == model:
+        if cur_dataset == dataset and cur_model == model:
             file_path = cur_file
             break
 
