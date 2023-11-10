@@ -101,7 +101,8 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
         l.logger.info(get_data().shape)
         l.logger.info('Finished to load pre-generated embeddings')
     else:
-        l.logger.error('File to load pre-generated embeddings not found')
+        l.logger.error('File to load pre-generated embeddings not found:')
+        l.logger.error(f'{file_path}')
 
 
 def load_msb(video_id, frame_id):
