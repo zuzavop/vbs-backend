@@ -70,6 +70,11 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     global DATA
     global CUR_SELECTION
 
+    if dataset == '':
+        dataset = c.BASE_DATASET
+    if model == '':
+        model = c.BASE_MODEL
+
     # Check if dataset and model are already loaded
     if [dataset, model] == CUR_SELECTION:
         return
@@ -95,6 +100,8 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
         l.logger.info(f'Reading in features took: {execution_time:.6f} secs')
         l.logger.info(get_data().shape)
         l.logger.info('Finished to load pre-generated embeddings')
+    else:
+        l.logger.error('File to load pre-generated embeddings not found')
 
 
 def load_msb(video_id, frame_id):
