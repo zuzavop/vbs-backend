@@ -8,7 +8,7 @@ import logging
 from PIL import Image
 from io import BytesIO
 
-from fastapi import FastAPI, File, Query, Body, UploadFile, Form
+from fastapi import FastAPI, File, Query, Body, UploadFile, Form, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -32,6 +32,11 @@ app.add_middleware(
 
 # Load features into the database
 db.load_features()
+
+
+def response_creator(json_dict: dict) -> Response:
+    headers = {'Content-Disposition': 'attachment; filename="data.json"'}
+    return Response(json_dict, headers=headers, media_type='application/json')
 
 
 # Define the 'textQuery' route
@@ -250,14 +255,16 @@ async def get_video(video_id: str):
 
 # Define the 'getRandomFrame' route
 @app.get('/getRandomFrame/')
-async def get_random_frame():
+async def get_random_frame(query_params: dict):
     '''
     Get URI of random frame.
     '''
-    add_features = False
+    dataset = query_params.get('dataset', c.BASE_DATASET)
+    model = query_params.get('model', c.BASE_MODEL)
+    add_features = bool(query_params.get('add_features', 0))
 
     # Call the function to retrieve a random video frame
-    images = fs.get_random_video_frame()
+    images = fs.get_random_video_frame(dataset, model)
 
     # Create return dictionary
     ret_dict = []
@@ -269,7 +276,7 @@ async def get_random_frame():
         video_id, frame_id = ids.split('_', 1)
 
         tmp_dict = {
-            'uri': f'{video_id}/{ids}.jpg',
+            'uri': f'{dataset}/{video_id}/{ids}.jpg',
             'id': [video_id, frame_id],
             'features': features,
             'label': None,
