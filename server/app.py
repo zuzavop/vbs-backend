@@ -79,7 +79,8 @@ async def text_query(query_params: dict):
     execution_time = time.time() - start_time
     l.logger.info(f'/textQuery: {execution_time:.6f} secs')
 
-    return JSONResponse(content=jsonable_encoder(ret_dict))
+    return response_creator(ret_dict)
+    # return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define the 'imageQuery' route
@@ -255,7 +256,7 @@ async def get_video(video_id: str):
 
 # Define the 'getRandomFrame' route
 @app.get('/getRandomFrame/')
-async def get_random_frame(query_params: dict):
+async def get_random_frame(query_params: dict = None):
     '''
     Get URI of random frame.
     '''
