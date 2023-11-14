@@ -35,8 +35,9 @@ db.load_features()
 
 
 def response_creator(json_dict: dict) -> Response:
+    json_dict_str = json.dumps(json_dict)
     headers = {'Content-Disposition': 'attachment; filename="data.json"'}
-    return Response(json_dict, headers=headers, media_type='application/json')
+    return Response(json_dict_str, headers=headers, media_type='application/json')
 
 
 # Define the 'textQuery' route
