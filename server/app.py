@@ -53,6 +53,7 @@ async def text_query(query_params: dict):
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
+    download_speed_up = bool(query_params.get('speed_up', 1))
 
     # Call the function to retrieve images
     images = fs.get_images_by_text_query(query, k, dataset, model)
@@ -79,8 +80,10 @@ async def text_query(query_params: dict):
     execution_time = time.time() - start_time
     l.logger.info(f'/textQuery: {execution_time:.6f} secs')
 
-    return response_creator(ret_dict)
-    # return JSONResponse(content=jsonable_encoder(ret_dict))
+    if download_speed_up:
+        return response_creator(ret_dict)
+    else:
+        return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define the 'imageQuery' route
@@ -100,6 +103,7 @@ async def image_query(
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
+    download_speed_up = bool(query_params.get('speed_up', 1))
 
     try:
         # Read the uploaded image file
@@ -135,7 +139,10 @@ async def image_query(
     execution_time = time.time() - start_time
     l.logger.info(f'/imageQuery: {execution_time:.6f} secs')
 
-    return JSONResponse(content=jsonable_encoder(ret_dict))
+    if download_speed_up:
+        return response_creator(ret_dict)
+    else:
+        return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define the 'imageQueryByID' route
@@ -156,6 +163,7 @@ async def image_query_by_id(
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
+    download_speed_up = bool(query_params.get('speed_up', 1))
 
     # Call the function to retrieve images
     try:
@@ -192,7 +200,10 @@ async def image_query_by_id(
     execution_time = time.time() - start_time
     l.logger.info(f'/imageQueryByID: {execution_time:.6f} secs')
 
-    return JSONResponse(content=jsonable_encoder(ret_dict))
+    if download_speed_up:
+        return response_creator(ret_dict)
+    else:
+        return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define the 'getVideoFrames' route
@@ -209,6 +220,7 @@ async def get_video_frames(query_params: dict):
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
+    download_speed_up = bool(query_params.get('speed_up', 1))
 
     # Call the function to retrieve video images
     images = fs.get_video_images_by_id(id, k, dataset, model)
@@ -233,7 +245,10 @@ async def get_video_frames(query_params: dict):
     execution_time = time.time() - start_time
     l.logger.info(f'/getVideoFrames: {execution_time:.6f} secs')
 
-    return JSONResponse(content=jsonable_encoder(ret_dict))
+    if download_speed_up:
+        return response_creator(ret_dict)
+    else:
+        return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define the 'getVideo' route
@@ -256,13 +271,14 @@ async def get_video(video_id: str):
 
 # Define the 'getRandomFrame' route
 @app.get('/getRandomFrame/')
-async def get_random_frame(query_params: dict = None):
+async def get_random_frame(query_params: dict = {}):
     '''
     Get URI of random frame.
     '''
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
+    download_speed_up = bool(query_params.get('speed_up', 1))
 
     # Call the function to retrieve a random video frame
     images = fs.get_random_video_frame(dataset, model)
@@ -284,7 +300,10 @@ async def get_random_frame(query_params: dict = None):
         }
         ret_dict.append(tmp_dict)
 
-    return JSONResponse(content=jsonable_encoder(ret_dict))
+    if download_speed_up:
+        return response_creator(ret_dict)
+    else:
+        return JSONResponse(content=jsonable_encoder(ret_dict))
 
 
 # Define a route and its handler function
