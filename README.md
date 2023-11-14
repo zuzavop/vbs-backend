@@ -88,13 +88,18 @@ docker-compose up --build
 
 ## API Documentation
 
+In general, there are several default parameters available for every query:  
+Defaults: `{"k": 1000, "dataset": "V3C", "model": "clip-laion", "add_features"="False", "speed_up"="True"}`  
+`"add_features"` adds features to the returning json depending on the `"dataset"` and `"model"`.  
+`"speed_up"` enables a download of the json file which speeds up the whole process.  
+
 ### Text Query
 
 **Endpoint:** `/textQuery/`
 
 **Method:** POST
 
-**Description:** Accepts a JSON object with a text query and optional parameters. It retrieves a list of images based on the text query. Defaults: k=1000 (max=10000), get_embeddings=False
+**Description:** Accepts a JSON object with a text query and optional parameters. It retrieves a list of images based on the text query.   
 
 **Request Body Example:**
 ```json
@@ -103,7 +108,8 @@ docker-compose up --build
   "k": 5,
   "dataset": "Dataset Name",
   "model": "Model Name",
-  "get_embeddings": false
+  "add_features": false,
+  "speed_up": true,
 }
 ```
   
@@ -118,7 +124,7 @@ See `tests\test_textQuery.sh` for an example.
     "score": 0.95,
     "id": ["video_id", "frame_id"],
     "features": [0.1, 0.2, 0.3],
-    "label": null
+    "label": [5, 10, 2, 3, 1]
   },
   {
     "uri": "another_image_uri",
@@ -126,7 +132,7 @@ See `tests\test_textQuery.sh` for an example.
     "score": 0.92,
     "id": ["video_id", "frame_id"],
     "features": [0.2, 0.3, 0.4],
-    "label": null
+    "label": [7, 4, 3, 9, 10]
   }
 ]
 ```
@@ -152,7 +158,7 @@ See `tests\test_imageQuery.sh` for an example.
     "score": 0.95,
     "id": ["video_id", "frame_id"],
     "features": [0.1, 0.2, 0.3],
-    "label": null
+    "label": [5, 10, 2, 3, 1]
   },
   {
     "uri": "another_image_uri",
@@ -160,7 +166,7 @@ See `tests\test_imageQuery.sh` for an example.
     "score": 0.92,
     "id": ["video_id", "frame_id"],
     "features": [0.2, 0.3, 0.4],
-    "label": null
+    "label": [7, 4, 3, 9, 10]
   }
 ]
 ```

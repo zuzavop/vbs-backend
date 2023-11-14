@@ -50,7 +50,7 @@ async def text_query(query_params: dict):
     l.logger.info(query_params)
 
     query = query_params.get('query', '')
-    k = min(query_params.get('k', 100), 10000)
+    k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
@@ -100,7 +100,7 @@ async def image_query(
     query_params = json.loads(query_params)
     l.logger.info(query_params)
 
-    k = min(query_params.get('k', 100), 10000)
+    k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
@@ -160,7 +160,7 @@ async def image_query_by_id(
 
     video_id = query_params.get('video_id', '')
     frame_id = query_params.get('frame_id', '')
-    k = min(query_params.get('k', 100), 10000)
+    k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
@@ -217,7 +217,7 @@ async def get_video_frames(query_params: dict):
     l.logger.info(query_params)
 
     id = query_params.get('item_id', '')
-    k = min(query_params.get('k', 100), 10000)
+    k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
