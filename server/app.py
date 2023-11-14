@@ -179,7 +179,7 @@ async def image_query_by_id(
         # Create return dictionary
         ret_dict = []
         for ids, rank, score, features, labels in images:
-            if not get_embeddings:
+            if not add_features:
                 features = []
 
             ids = ids.decode('utf-8')
