@@ -183,11 +183,13 @@ def get_video_images_by_id(
     return video_images
 
 
-def get_random_video_frame(dataset: str = '', model: str = ''):
+def get_random_video_frame(dataset: str, model: str, rounding: bool = False):
     # Load data from the database
     # Get an array of video IDs from the database
     db.load_features(dataset, model)
     data = db.get_data()
+    if rounding:
+        data = data.round(8)
     ids = np.array(db.get_ids())
 
     # Generate a random index within the valid range of IDs

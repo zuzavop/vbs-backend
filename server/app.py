@@ -59,7 +59,7 @@ async def text_query(query_params: dict):
     )
 
     # Call the function to retrieve images
-    images = fs.get_images_by_text_query(query, k, dataset, model)
+    images = fs.get_images_by_text_query(query, k, dataset, model, rounding_speed_up)
 
     # Create return dictionary
     ret_dict = []
@@ -105,8 +105,11 @@ async def image_query(
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
-    add_features = bool(query_params.get('add_features', 0))
-    download_speed_up = bool(query_params.get('speed_up', 1))
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    rounding_speed_up = bool(
+        query_params.get('rounding_speed_up', c.BASE_ROUNDING_SPEED_UP)
+    )
 
     try:
         # Read the uploaded image file
@@ -115,7 +118,9 @@ async def image_query(
         # Open the image using Pillow (PIL)
         uploaded_image = Image.open(BytesIO(image_data))
 
-        images = fs.get_images_by_image_query(uploaded_image, k, dataset, model)
+        images = fs.get_images_by_image_query(
+            uploaded_image, k, dataset, model, rounding_speed_up
+        )
 
         # Create return dictionary
         ret_dict = []
@@ -150,14 +155,11 @@ async def image_query(
 
 # Define the 'imageQueryByID' route
 @app.post('/imageQueryByID/')
-async def image_query_by_id(
-    query_params: str = dict,
-):
+async def image_query_by_id(query_params: str = dict):
     '''
     Get a list of images based on an image query.
     '''
     start_time = time.time()
-    query_params = json.loads(query_params)
     l.logger.info(query_params)
 
     video_id = query_params.get('video_id', '')
@@ -165,15 +167,15 @@ async def image_query_by_id(
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
-    add_features = bool(query_params.get('add_features', 0))
-    download_speed_up = bool(query_params.get('speed_up', 1))
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     rounding_speed_up = bool(
         query_params.get('rounding_speed_up', c.BASE_ROUNDING_SPEED_UP)
     )
 
     # Call the function to retrieve images
     id = f'{video_id}_{frame_id}'
-    images = fs.get_images_by_image_id(id, k, dataset, model)
+    images = fs.get_images_by_image_id(id, k, dataset, model, rounding_speed_up)
 
     # Create return dictionary
     ret_dict = []
@@ -216,11 +218,14 @@ async def get_video_frames(query_params: dict):
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
-    add_features = bool(query_params.get('add_features', 0))
-    download_speed_up = bool(query_params.get('speed_up', 1))
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    rounding_speed_up = bool(
+        query_params.get('rounding_speed_up', c.BASE_ROUNDING_SPEED_UP)
+    )
 
     # Call the function to retrieve video images
-    images = fs.get_video_images_by_id(id, k, dataset, model)
+    images = fs.get_video_images_by_id(id, k, dataset, model, rounding_speed_up)
 
     # Create return dictionary
     ret_dict = []
@@ -274,11 +279,14 @@ async def get_random_frame(query_params: dict = {}):
     '''
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
-    add_features = bool(query_params.get('add_features', 0))
-    download_speed_up = bool(query_params.get('speed_up', 1))
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    rounding_speed_up = bool(
+        query_params.get('rounding_speed_up', c.BASE_ROUNDING_SPEED_UP)
+    )
 
     # Call the function to retrieve a random video frame
-    images = fs.get_random_video_frame(dataset, model)
+    images = fs.get_random_video_frame(dataset, model, rounding_speed_up)
 
     # Create return dictionary
     ret_dict = []
