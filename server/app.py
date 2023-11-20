@@ -155,7 +155,7 @@ async def image_query(
 
 # Define the 'imageQueryByID' route
 @app.post('/imageQueryByID/')
-async def image_query_by_id(query_params: str = dict):
+async def image_query_by_id(query_params: dict):
     '''
     Get a list of images based on an image query.
     '''
