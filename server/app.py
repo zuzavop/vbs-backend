@@ -1,6 +1,3 @@
-import logger as l
-import configs as c
-
 import time
 import json
 import logging
@@ -13,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
+import logger as l
+import configs as c
 import features as fs
 import database as db
 
@@ -50,11 +49,14 @@ async def text_query(query_params: dict):
     l.logger.info(query_params)
 
     query = query_params.get('query', '')
-    k = min(query_params.get('k', 1000), 10000)
+    k = min(query_params.get('k', c.BASE_K), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
-    add_features = bool(query_params.get('add_features', 0))
-    download_speed_up = bool(query_params.get('speed_up', 1))
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    rounding_speed_up = bool(
+        query_params.get('rounding_speed_up', c.BASE_ROUNDING_SPEED_UP)
+    )
 
     # Call the function to retrieve images
     images = fs.get_images_by_text_query(query, k, dataset, model)
@@ -165,38 +167,32 @@ async def image_query_by_id(
     model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', 0))
     download_speed_up = bool(query_params.get('speed_up', 1))
+    rounding_speed_up = bool(
+        query_params.get('rounding_speed_up', c.BASE_ROUNDING_SPEED_UP)
+    )
 
     # Call the function to retrieve images
-    try:
-        # Read the uploaded image file
-        image_data = await image.read()
+    id = f'{video_id}_{frame_id}'
+    images = fs.get_images_by_image_id(id, k, dataset, model)
 
-        # Open the image using Pillow (PIL)
-        uploaded_image = Image.open(BytesIO(image_data))
+    # Create return dictionary
+    ret_dict = []
+    for ids, rank, score, features, labels in images:
+        if not add_features:
+            features = []
 
-        images = fs.get_images_by_image_query(uploaded_image, k, dataset, model)
+        ids = ids.decode('utf-8')
+        video_id, frame_id = ids.split('_', 1)
 
-        # Create return dictionary
-        ret_dict = []
-        for ids, rank, score, features, labels in images:
-            if not add_features:
-                features = []
-
-            ids = ids.decode('utf-8')
-            video_id, frame_id = ids.split('_', 1)
-
-            tmp_dict = {
-                'uri': f'{dataset}/{video_id}/{ids}.jpg',
-                'rank': rank,
-                'score': score,
-                'id': [video_id, frame_id],
-                'features': features,
-                'label': labels,
-            }
-            ret_dict.append(tmp_dict)
-
-    except Exception as e:
-        ret_dict = {'error': str(e)}
+        tmp_dict = {
+            'uri': f'{dataset}/{video_id}/{ids}.jpg',
+            'rank': rank,
+            'score': score,
+            'id': [video_id, frame_id],
+            'features': features,
+            'label': labels,
+        }
+        ret_dict.append(tmp_dict)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/imageQueryByID: {execution_time:.6f} secs')

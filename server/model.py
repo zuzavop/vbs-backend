@@ -109,6 +109,10 @@ def embed_image_open_clip(image):
 
 
 def embed_text(text, model):
+    # Check if model is available
+    if not model in available_models:
+        model = available_models[0]
+
     # Check if the specified model is 'clip-laion'
     if 'clip-laion' in model:
         return embed_text_laion(text)
@@ -118,6 +122,10 @@ def embed_text(text, model):
 
 
 def embed_image(image, model):
+    # Check if model is available
+    if not model in available_models:
+        model = available_models[0]
+
     # Check if the specified model is 'clip-laion'
     if 'clip-laion' in model:
         return embed_image_laion(image)

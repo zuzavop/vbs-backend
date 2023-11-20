@@ -22,12 +22,10 @@ def get_cosine_ranking(query_vector, matrix):
     return nearest_neighbors, dot_product
 
 
-def get_images_by_text_query(query: str, k: int, dataset: str = '', model: str = ''):
+def get_images_by_text_query(
+    query: str, k: int, dataset: str, model: str, rounding: bool = False
+):
     start_time = time.time()
-
-    # Check if model is available
-    if not model in m.available_models:
-        model = m.available_models[0]
 
     # Tokenize query input and encode the data using the selected model
     text_features = m.embed_text(query, model)
@@ -38,6 +36,8 @@ def get_images_by_text_query(query: str, k: int, dataset: str = '', model: str =
     # Load data
     db.load_features(dataset, model)
     data = db.get_data()
+    if rounding:
+        data = data.round(8)
     ids = np.array(db.get_ids())
     labels = db.get_labels()
 
@@ -68,12 +68,10 @@ def get_images_by_text_query(query: str, k: int, dataset: str = '', model: str =
     return most_similar_samples
 
 
-def get_images_by_image_query(image: Image, k: int, dataset: str = '', model: str = ''):
+def get_images_by_image_query(
+    image: Image, k: int, dataset: str, model: str, rounding: bool = False
+):
     start_time = time.time()
-
-    # Check if model is available
-    if not model in m.available_models:
-        model = m.available_models[0]
 
     # Preprocess query input and encode the data using the selected model
     image_features = m.embed_image(image, model)
@@ -84,6 +82,8 @@ def get_images_by_image_query(image: Image, k: int, dataset: str = '', model: st
     # Load data
     db.load_features(dataset, model)
     data = db.get_data()
+    if rounding:
+        data = data.round(8)
     ids = np.array(db.get_ids())
     labels = db.get_labels()
 
@@ -114,11 +114,59 @@ def get_images_by_image_query(image: Image, k: int, dataset: str = '', model: st
     return most_similar_samples
 
 
-def get_video_images_by_id(id: str, k: int, dataset: str = '', model: str = ''):
+def get_images_by_image_id(
+    id: str, k: int, dataset: str, model: str, rounding: bool = False
+):
+    start_time = time.time()
+
+    # Load data
+    db.load_features(dataset, model)
+    data = db.get_data()
+    if rounding:
+        data = data.round(8)
+    ids = np.array(db.get_ids())
+    labels = db.get_labels()
+
+    # Find the index of the provided 'id' within the 'ids' array
+    idx = np.where(ids == id.encode('utf-8'))[0][0]
+    image_features = data[idx]
+
+    # Calculate cosine distance between embedding and data and sort similarities
+    sorted_indices, similarities = get_cosine_ranking(image_features, data)
+    sorted_indices = sorted_indices[:k]
+
+    # Give only back the k most similar embeddings
+    most_similar_samples = list(
+        zip(
+            ids[sorted_indices].tolist(),
+            [i for i in range(len(sorted_indices))],
+            similarities[sorted_indices].tolist(),
+            data[sorted_indices].tolist(),
+            labels[sorted_indices].tolist(),
+        )
+    )
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
+
+    del data
+    del ids
+    del labels
+    del similarities
+    del sorted_indices
+
+    return most_similar_samples
+
+
+def get_video_images_by_id(
+    id: str, k: int, dataset: str, model: str, rounding: bool = False
+):
     # Load data from the database
     # Get an array of video IDs from the database
     db.load_features(dataset, model)
     data = db.get_data()
+    if rounding:
+        data = data.round(8)
     ids = np.array(db.get_ids())
 
     # Find the index of the provided 'id' within the 'ids' array
@@ -126,10 +174,10 @@ def get_video_images_by_id(id: str, k: int, dataset: str = '', model: str = ''):
 
     # Extract a slice of 'k' elements centered around the found index
     ids = ids[idx - k : idx + k]
-    features = data[idx - k : idx + k]
+    sliced_features = data[idx - k : idx + k]
 
     # Combine the selected IDs and features into a list of tuples
-    video_images = list(zip(ids.tolist(), features.tolist()))
+    video_images = list(zip(ids.tolist(), sliced_features.tolist()))
 
     # Return a list of (ID, feature) pairs
     return video_images
