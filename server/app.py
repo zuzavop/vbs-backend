@@ -164,6 +164,7 @@ async def image_query_by_id(query_params: dict):
 
     video_id = query_params.get('video_id', '')
     frame_id = query_params.get('frame_id', '')
+    item_id = query_params.get('item_id', '')
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
@@ -174,8 +175,9 @@ async def image_query_by_id(query_params: dict):
     )
 
     # Call the function to retrieve images
-    id = f'{video_id}_{frame_id}'
-    images = fs.get_images_by_image_id(id, k, dataset, model, rounding_speed_up)
+    if item_id == '':
+        item_id = f'{video_id}_{frame_id}'
+    images = fs.get_images_by_image_id(item_id, k, dataset, model, rounding_speed_up)
 
     # Create return dictionary
     ret_dict = []
@@ -214,7 +216,9 @@ async def get_video_frames(query_params: dict):
     start_time = time.time()
     l.logger.info(query_params)
 
-    id = query_params.get('item_id', '')
+    video_id = query_params.get('video_id', '')
+    frame_id = query_params.get('frame_id', '')
+    item_id = query_params.get('item_id', '')
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET)
     model = query_params.get('model', c.BASE_MODEL)
@@ -225,7 +229,9 @@ async def get_video_frames(query_params: dict):
     )
 
     # Call the function to retrieve video images
-    images = fs.get_video_images_by_id(id, k, dataset, model, rounding_speed_up)
+    if item_id == '':
+        item_id = f'{video_id}_{frame_id}'
+    images = fs.get_video_images_by_id(item_id, k, dataset, model, rounding_speed_up)
 
     # Create return dictionary
     ret_dict = []
