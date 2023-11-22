@@ -296,7 +296,7 @@ async def get_random_frame(query_params: dict = {}):
 
     # Create return dictionary
     ret_dict = []
-    for ids, features in images:
+    for ids, features, labels in images:
         if not add_features:
             features = []
 
@@ -307,7 +307,7 @@ async def get_random_frame(query_params: dict = {}):
             'uri': f'{dataset}/{video_id}/{ids}.jpg',
             'id': [video_id, frame_id],
             'features': features,
-            'label': None,
+            'label': labels,
         }
         ret_dict.append(tmp_dict)
 

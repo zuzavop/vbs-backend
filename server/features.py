@@ -176,9 +176,12 @@ def get_video_images_by_id(
     # Extract a slice of 'k' elements centered around the found index
     ids = ids[idx - k : idx + k]
     sliced_features = data[idx - k : idx + k]
+    sliced_labels = labels[idx - k : idx + k]
 
     # Combine the selected IDs and features into a list of tuples
-    video_images = list(zip(ids.tolist(), sliced_features.tolist()))
+    video_images = list(
+        zip(ids.tolist(), sliced_features.tolist(), sliced_labels.tolist())
+    )
 
     # Return a list of (ID, feature) pairs
     return video_images
@@ -192,6 +195,7 @@ def get_random_video_frame(dataset: str, model: str, rounding: bool = False):
     if rounding:
         data = data.round(8)
     ids = np.array(db.get_ids())
+    labels = db.get_labels()
 
     # Generate a random index within the valid range of IDs
     random_id = np.random.randint(0, len(ids))
@@ -202,8 +206,13 @@ def get_random_video_frame(dataset: str, model: str, rounding: bool = False):
     # Select the corresponding data or features using the random index
     selected_features = data[random_id : random_id + 1]
 
+    # Select the corresponding data or features using the random index
+    selected_labels = labels[random_id : random_id + 1]
+
     # Combine the selected IDs and features into a list of tuples
-    video_images = list(zip(selected_ids.tolist(), selected_features.tolist()))
+    video_images = list(
+        zip(selected_ids.tolist(), selected_features.tolist(), selected_labels.tolist())
+    )
 
     # Return a list of (ID, feature) pairs
     return video_images
