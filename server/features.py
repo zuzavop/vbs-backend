@@ -168,6 +168,7 @@ def get_video_images_by_id(
     if rounding:
         data = data.round(8)
     ids = np.array(db.get_ids())
+    labels = db.get_labels()
 
     # Find the index of the provided 'id' within the 'ids' array
     idx = np.where(ids == id.encode('utf-8'))[0][0]
