@@ -12,6 +12,9 @@ import logger as l
 import model as m
 
 
+ROUND_TO = 5
+
+
 def get_cosine_ranking(query_vector, matrix):
     # Get the dot product for every entry
     dot_product = torch.matmul(query_vector, matrix.T)
@@ -36,14 +39,16 @@ def get_images_by_text_query(
     # Load data
     db.load_features(dataset, model)
     data = db.get_data()
-    if rounding:
-        data = data.round(8)
     ids = np.array(db.get_ids())
     labels = db.get_labels()
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(text_features, data)
     sorted_indices = sorted_indices[:k]
+
+    # round to reduce data size
+    if rounding:
+        data = data.round(ROUND_TO)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -82,14 +87,16 @@ def get_images_by_image_query(
     # Load data
     db.load_features(dataset, model)
     data = db.get_data()
-    if rounding:
-        data = data.round(8)
     ids = np.array(db.get_ids())
     labels = db.get_labels()
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(image_features, data)
     sorted_indices = sorted_indices[:k]
+
+    # round to reduce data size
+    if rounding:
+        data = data.round(ROUND_TO)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -122,8 +129,6 @@ def get_images_by_image_id(
     # Load data
     db.load_features(dataset, model)
     data = db.get_data()
-    if rounding:
-        data = data.round(8)
     ids = np.array(db.get_ids())
     labels = db.get_labels()
 
@@ -134,6 +139,10 @@ def get_images_by_image_id(
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(image_features, data)
     sorted_indices = sorted_indices[:k]
+
+    # round to reduce data size
+    if rounding:
+        data = data.round(ROUND_TO)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -165,8 +174,6 @@ def get_video_images_by_id(
     # Get an array of video IDs from the database
     db.load_features(dataset, model)
     data = db.get_data()
-    if rounding:
-        data = data.round(8)
     ids = np.array(db.get_ids())
     labels = db.get_labels()
 
@@ -177,6 +184,10 @@ def get_video_images_by_id(
     ids = ids[idx - k : idx + k]
     sliced_features = data[idx - k : idx + k]
     sliced_labels = labels[idx - k : idx + k]
+
+    # round to reduce data size
+    if rounding:
+        sliced_features = sliced_features.round(ROUND_TO)
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
@@ -192,8 +203,6 @@ def get_random_video_frame(dataset: str, model: str, rounding: bool = False):
     # Get an array of video IDs from the database
     db.load_features(dataset, model)
     data = db.get_data()
-    if rounding:
-        data = data.round(8)
     ids = np.array(db.get_ids())
     labels = db.get_labels()
 
@@ -208,6 +217,10 @@ def get_random_video_frame(dataset: str, model: str, rounding: bool = False):
 
     # Select the corresponding data or features using the random index
     selected_labels = labels[random_id : random_id + 1]
+
+    # round to reduce data size
+    if rounding:
+        sliced_features = sliced_features.round(ROUND_TO)
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
