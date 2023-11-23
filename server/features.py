@@ -48,7 +48,7 @@ def get_images_by_text_query(
 
     # round to reduce data size
     if rounding:
-        data = data.round(ROUND_TO)
+        data = np.around(data, ROUND_TO)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -96,7 +96,7 @@ def get_images_by_image_query(
 
     # round to reduce data size
     if rounding:
-        data = data.round(ROUND_TO)
+        data = np.around(data, ROUND_TO)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -142,7 +142,7 @@ def get_images_by_image_id(
 
     # round to reduce data size
     if rounding:
-        data = data.round(ROUND_TO)
+        data = np.around(data, ROUND_TO)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -187,7 +187,7 @@ def get_video_images_by_id(
 
     # round to reduce data size
     if rounding:
-        sliced_features = sliced_features.round(ROUND_TO)
+        sliced_features = np.around(sliced_features, ROUND_TO)
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
@@ -220,7 +220,7 @@ def get_random_video_frame(dataset: str, model: str, rounding: bool = False):
 
     # round to reduce data size
     if rounding:
-        sliced_features = sliced_features.round(ROUND_TO)
+        sliced_features = np.around(sliced_features, ROUND_TO)
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
