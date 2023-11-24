@@ -33,6 +33,19 @@ app.add_middleware(
 db.load_features()
 
 
+class RoundingFloat(float):
+    __repr__ = staticmethod(lambda x: format(x, '.5f'))
+
+
+json.encoder.c_make_encoder = None
+if hasattr(json.encoder, 'FLOAT_REPR'):
+    # Python 2
+    json.encoder.FLOAT_REPR = RoundingFloat.__repr__
+else:
+    # Python 3
+    json.encoder.float = RoundingFloat
+
+
 def response_creator(json_dict: dict) -> Response:
     json_dict_str = json.dumps(json_dict)
     headers = {'Content-Disposition': 'attachment; filename="data.json"'}
