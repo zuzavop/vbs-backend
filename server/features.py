@@ -243,8 +243,8 @@ def get_random_video_frame(dataset: str, model: str, rounding: bool = False):
     del ids
     del labels
     del selected_ids
-    del sliced_features
-    del sliced_labels
+    del selected_features
+    del selected_labels
 
     # Return a list of (ID, feature) pairs
     return video_images
