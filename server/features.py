@@ -183,7 +183,7 @@ def get_video_images_by_id(
     idx = np.where(ids == id.encode('utf-8'))[0][0]
 
     # Extract a slice of 'k' elements centered around the found index
-    ids = ids[idx - k : idx + k]
+    sliced_ids = ids[idx - k : idx + k]
     sliced_features = data[idx - k : idx + k]
     sliced_labels = labels[idx - k : idx + k]
 
@@ -194,8 +194,15 @@ def get_video_images_by_id(
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
-        zip(ids.tolist(), sliced_features.tolist(), sliced_labels.tolist())
+        zip(sliced_ids.tolist(), sliced_features.tolist(), sliced_labels.tolist())
     )
+
+    del data
+    del ids
+    del labels
+    del sliced_ids
+    del sliced_features
+    del sliced_labels
 
     # Return a list of (ID, feature) pairs
     return video_images
@@ -223,13 +230,20 @@ def get_random_video_frame(dataset: str, model: str, rounding: bool = False):
 
     # round to reduce data size
     if rounding:
-        sliced_features = (sliced_features * 10**ROUND_TO).astype(int)
+        selected_features = (selected_features * 10**ROUND_TO).astype(int)
         # sliced_features = np.around(sliced_features, ROUND_TO)
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
         zip(selected_ids.tolist(), selected_features.tolist(), selected_labels.tolist())
     )
+
+    del data
+    del ids
+    del labels
+    del selected_ids
+    del sliced_features
+    del sliced_labels
 
     # Return a list of (ID, feature) pairs
     return video_images
