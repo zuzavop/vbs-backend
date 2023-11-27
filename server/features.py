@@ -156,6 +156,9 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     # Find the index of the provided 'id' within the 'ids' array
     idx = np.where(ids == id.encode('utf-8'))[0][0]
 
+    if k == 0:
+        k = 1000
+
     # Extract a slice of 'k' elements centered around the found index
     sliced_ids = ids[idx - k : idx + k]
     sliced_features = data[idx - k : idx + k]

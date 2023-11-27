@@ -32,7 +32,11 @@ db.load_features()
 
 
 class RoundingFloat(float):
-    __repr__ = staticmethod(lambda x: format(x, f'.{c.BASE_ROUNDING_PRECISION}f'))
+    __repr__ = staticmethod(
+        lambda x: format(
+            x * c.BASE_ROUNDING_PRECISION, f'.{c.BASE_ROUNDING_PRECISION}f'
+        )
+    )
 
 
 json.encoder.c_make_encoder = None
@@ -40,13 +44,21 @@ json.encoder.float = RoundingFloat
 
 
 def attachment_response_creator(dict_for_json: dict) -> Response:
+    start_time = time.time()
     dict_for_json_str = json.dumps(dict_for_json)
     headers = {'Content-Disposition': 'attachment; filename="data.json"'}
-    return Response(dict_for_json_str, headers=headers, media_type='application/json')
+    resp = Response(dict_for_json_str, headers=headers, media_type='application/json')
+    execution_time = time.time() - start_time
+    l.logger.info(f'Attachment response creation: {execution_time:.6f} secs')
+    return resp
 
 
 def json_response_creator(dict_for_json: dict) -> Response:
-    return Response(json.dumps(dict_for_json))
+    start_time = time.time()
+    resp = Response(json.dumps(dict_for_json))
+    execution_time = time.time() - start_time
+    l.logger.info(f'Response creation: {execution_time:.6f} secs')
+    return resp
 
 
 # Define the 'textQuery' route
