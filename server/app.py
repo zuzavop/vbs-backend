@@ -34,7 +34,7 @@ db.load_features()
 class RoundingFloat(float):
     __repr__ = staticmethod(
         lambda x: format(
-            x * c.BASE_ROUNDING_PRECISION, f'.{c.BASE_ROUNDING_PRECISION}f'
+            x * c.BASE_ROUNDING_PRECISION, f'.{0}f'  # c.BASE_ROUNDING_PRECISION
         )
     )
 
