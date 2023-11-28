@@ -7,6 +7,7 @@ import numpy as np
 from PIL import Image
 
 import database as db
+import configs as c
 import logger as l
 import model as m
 
