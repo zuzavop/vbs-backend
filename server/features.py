@@ -40,13 +40,18 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     sorted_indices, similarities = get_cosine_ranking(text_features, data)
     sorted_indices = sorted_indices[:k]
 
+    # If settings multiply and change to integer
+    selected_data = data[sorted_indices]
+    if c.BASE_MULTIPLICATION:
+        selected_data = (selected_data * c.BASE_MULTIPLIER).int()
+
     # Give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
             ids[sorted_indices].tolist(),
             [i for i in range(len(sorted_indices))],
             similarities[sorted_indices].tolist(),
-            data[sorted_indices].tolist(),
+            selected_data.tolist(),
             labels[sorted_indices].tolist(),
         )
     )
@@ -82,13 +87,18 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     sorted_indices, similarities = get_cosine_ranking(image_features, data)
     sorted_indices = sorted_indices[:k]
 
+    # If settings multiply and change to integer
+    selected_data = data[sorted_indices]
+    if c.BASE_MULTIPLICATION:
+        selected_data = (selected_data * c.BASE_MULTIPLIER).int()
+
     # Give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
             ids[sorted_indices].tolist(),
             [i for i in range(len(sorted_indices))],
             similarities[sorted_indices].tolist(),
-            data[sorted_indices].tolist(),
+            selected_data.tolist(),
             labels[sorted_indices].tolist(),
         )
     )
@@ -122,13 +132,18 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     sorted_indices, similarities = get_cosine_ranking(image_features, data)
     sorted_indices = sorted_indices[:k]
 
+    # If settings multiply and change to integer
+    selected_data = data[sorted_indices]
+    if c.BASE_MULTIPLICATION:
+        selected_data = (selected_data * c.BASE_MULTIPLIER).int()
+
     # Give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
             ids[sorted_indices].tolist(),
             [i for i in range(len(sorted_indices))],
             similarities[sorted_indices].tolist(),
-            data[sorted_indices].tolist(),
+            selected_data.tolist(),
             labels[sorted_indices].tolist(),
         )
     )
@@ -163,6 +178,10 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     sliced_ids = ids[idx - k : idx + k]
     sliced_features = data[idx - k : idx + k]
     sliced_labels = labels[idx - k : idx + k]
+
+    # If settings multiply and change to integer
+    if c.BASE_MULTIPLICATION:
+        sliced_features = (sliced_features * c.BASE_MULTIPLIER).int()
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
@@ -199,6 +218,10 @@ def get_random_video_frame(dataset: str, model: str):
 
     # Select the corresponding data or features using the random index
     selected_labels = labels[random_id : random_id + 1]
+
+    # If settings multiply and change to integer
+    if c.BASE_MULTIPLICATION:
+        selected_features = (selected_features * c.BASE_MULTIPLIER).int()
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
