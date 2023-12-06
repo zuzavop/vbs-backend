@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 import os
 import dill
 import h5py
@@ -15,22 +17,22 @@ import configs as c
 max_depth = 2
 
 
-db_pkl_files = []
-# Use os.walk to search for 'processed' folders up to two levels deep
-for root, _, files in os.walk(c.DATABASE_ROOT):
-    current_depth = root.count(os.path.sep) - c.DATABASE_ROOT.count(os.path.sep)
-    if current_depth <= max_depth:
-        if 'processed' in root:
-            for file in files:
-                if file.endswith('.db.pkl'):
-                    db_pkl_files.append(os.path.join(root, file))
+# db_pkl_files = []
+# # Use os.walk to search for 'processed' folders up to two levels deep
+# for root, _, files in os.walk(c.DATABASE_ROOT):
+#     current_depth = root.count(os.path.sep) - c.DATABASE_ROOT.count(os.path.sep)
+#     if current_depth <= max_depth:
+#         if 'processed' in root:
+#             for file in files:
+#                 if file.endswith('.db.pkl'):
+#                     db_pkl_files.append(os.path.join(root, file))
 
-datasets_and_features = []
-for file in db_pkl_files:
-    file_name = os.path.basename(file)
-    dataset_name = file.split('/')[-3]
-    feature_name = file_name.split('__')[-1].split('.')[0]
-    datasets_and_features.append([dataset_name, feature_name, file])
+# datasets_and_features = []
+# for file in db_pkl_files:
+#     file_name = os.path.basename(file)
+#     dataset_name = file.split('/')[-3]
+#     feature_name = file_name.split('__')[-1].split('.')[0]
+#     datasets_and_features.append([dataset_name, feature_name, file])
 
 
 # Class structure to store data, indices, and labels
@@ -83,7 +85,22 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     l.logger.info('Start to load pre-generated embeddings')
     start_time = time.time()
 
-    l.logger.info(f'Selected dataset: {dataset}, model: {model}')
+    datasets_and_features = []
+    # Use os.walk to search for 'processed' folders up to two levels deep
+    for root, _, files in os.walk(c.DATABASE_ROOT):
+        current_depth = root.count(os.path.sep) - c.DATABASE_ROOT.count(os.path.sep)
+        if current_depth <= max_depth:
+            if 'processed' in root:
+                for file in files:
+                    if file.endswith('.db.pkl'):
+                        file_path = os.path.join(root, file)
+                        file_name = os.path.basename(file_path)
+                        dataset_name = file_path.split('/')[-3]
+                        feature_name = file_name.split('__')[-1].split('.')[0]
+                        datasets_and_features.append(
+                            [dataset_name, feature_name, file_path]
+                        )
+
     # Check available models and datasets
     file_path = None
     for dataset_and_feature in datasets_and_features:
@@ -95,6 +112,7 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
             file_path = cur_file
             break
 
+    l.logger.info(f'Selected dataset: {dataset}, model: {model}')
     if file_path:
         # read data and ids from hard drive
         with open(file_path, 'rb') as f:
@@ -102,18 +120,8 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
 
         execution_time = time.time() - start_time
         l.logger.info(f'Reading in features took: {execution_time:.6f} secs')
-        l.logger.info(get_data().shape)
+        l.logger.info(f'Got size: {list(get_data().shape)}')
         l.logger.info('Finished to load pre-generated embeddings')
     else:
         l.logger.error('File to load pre-generated embeddings not found:')
         l.logger.error(f'{file_path}')
-
-
-def load_msb(video_id, frame_id):
-    l.logger.info('Start to load MSB')
-
-    # Specify the directory
-    tsv_file_path = os.path.join(c.DATABASE_ROOT, 'msb', f'{video_id}.tsv')
-    data = pd.read_csv(tsv_file_path, sep='\t')
-
-    return data[data['startframe'] == frame_id]

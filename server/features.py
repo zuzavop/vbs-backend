@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 import time
 import torch
+
 import numpy as np
 
 from PIL import Image
@@ -9,7 +10,7 @@ from PIL import Image
 import database as db
 import configs as c
 import logger as l
-import model as m
+import models as m
 
 
 def get_cosine_ranking(query_vector, matrix):
@@ -19,6 +20,7 @@ def get_cosine_ranking(query_vector, matrix):
     # Sort for the indices of the nearest neighbors
     nearest_neighbors = torch.argsort(-dot_product)
 
+    # Give back nearest neigbor sortings and distances
     return nearest_neighbors, dot_product
 
 
@@ -66,6 +68,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     del similarities
     del sorted_indices
 
+    # Return a list of (ID, rank, score, feature, label) tuples
     return most_similar_samples
 
 
@@ -113,6 +116,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     del similarities
     del sorted_indices
 
+    # Return a list of (ID, rank, score, feature, label) tuples
     return most_similar_samples
 
 
@@ -158,6 +162,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     del similarities
     del sorted_indices
 
+    # Return a list of (ID, rank, score, feature, label) tuples
     return most_similar_samples
 
 
@@ -172,13 +177,35 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     # Find the index of the provided 'id' within the 'ids' array
     idx = np.where(ids == id.encode('utf-8'))[0][0]
 
+    # Set start and end indices
     if k == 0:
         k = 1000
 
     # Extract a slice of 'k' elements centered around the found index
-    sliced_ids = ids[idx - k : idx + k]
-    sliced_features = data[idx - k : idx + k]
-    sliced_labels = labels[idx - k : idx + k]
+    start_idx = idx - k
+    end_idx = idx + k + 1
+
+    # Get all video frames for the video
+    if k == -1:
+        # Get video id
+        video_id = id.split('_')[0]
+
+        # Get video frames before the provided
+        cur_i = 0
+        while ids[idx - cur_i].decode('utf-8').startswith(video_id):
+            cur_i += 1
+        start_idx = idx - cur_i + 1
+
+        # Get video frames after the provided
+        cur_i = 0
+        while ids[idx + cur_i].decode('utf-8').startswith(video_id):
+            cur_i += 1
+        end_idx = idx + cur_i
+
+    # Slice around start and end indices
+    sliced_ids = ids[start_idx:end_idx]
+    sliced_features = data[start_idx:end_idx]
+    sliced_labels = labels[start_idx:end_idx]
 
     # If settings multiply and change to integer
     if c.BASE_MULTIPLICATION:
@@ -196,7 +223,7 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     del sliced_features
     del sliced_labels
 
-    # Return a list of (ID, feature) pairs
+    # Return a list of (ID, feature, label) tuples
     return video_images
 
 
@@ -236,5 +263,5 @@ def get_random_video_frame(dataset: str, model: str):
     del selected_features
     del selected_labels
 
-    # Return a list of (ID, feature) pairs
+    # Return a list of (ID, feature, label) tuples
     return video_images

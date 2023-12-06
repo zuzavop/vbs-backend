@@ -1,7 +1,12 @@
+# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+import time
+
 import open_clip
 
 from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 
+import logger as l
 import configs as c
 
 
@@ -134,4 +139,8 @@ def embed_image(image, model):
         return embed_image_open_clip(image)
 
 
+l.logger.info('Start to load pre-trained models')
+start_time = time.time()
 load_laion()
+execution_time = time.time() - start_time
+l.logger.info(f'Loading pre-trained models took: {execution_time:.6f} secs')
