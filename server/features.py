@@ -251,8 +251,6 @@ def get_random_video_frame(dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_features = (selected_features * c.BASE_MULTIPLIER).int()
 
-    print(selected_ids, selected_features, selected_labels)
-
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
         zip(selected_ids.tolist(), selected_features.tolist(), selected_labels.tolist())

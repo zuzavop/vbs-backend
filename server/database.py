@@ -44,12 +44,12 @@ def get_ids():
 
 def get_labels():
     if isinstance(DATA.LABELS, list):
-        return torch.tensor([])
+        return torch.tensor([-1] * DATA.LABELS)
     return DATA.LABELS
 
 
 def name_splitter(ids, dataset):
-    if dataset is 'MVK':
+    if dataset == 'MVK':
         return ids.split('-', 1)
     else:
         return ids.split('_', 1)
