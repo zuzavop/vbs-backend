@@ -44,7 +44,7 @@ def get_ids():
 
 def get_labels():
     if isinstance(DATA.LABELS, list):
-        return torch.tensor([-1] * DATA.LABELS)
+        return torch.tensor([-1] * len(DATA.IDS))
     return DATA.LABELS
 
 
