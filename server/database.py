@@ -4,6 +4,7 @@ import os
 import dill
 import h5py
 import time
+import torch
 
 import pandas as pd
 import numpy as np
@@ -15,24 +16,6 @@ import configs as c
 
 
 max_depth = 2
-
-
-# db_pkl_files = []
-# # Use os.walk to search for 'processed' folders up to two levels deep
-# for root, _, files in os.walk(c.DATABASE_ROOT):
-#     current_depth = root.count(os.path.sep) - c.DATABASE_ROOT.count(os.path.sep)
-#     if current_depth <= max_depth:
-#         if 'processed' in root:
-#             for file in files:
-#                 if file.endswith('.db.pkl'):
-#                     db_pkl_files.append(os.path.join(root, file))
-
-# datasets_and_features = []
-# for file in db_pkl_files:
-#     file_name = os.path.basename(file)
-#     dataset_name = file.split('/')[-3]
-#     feature_name = file_name.split('__')[-1].split('.')[0]
-#     datasets_and_features.append([dataset_name, feature_name, file])
 
 
 # Class structure to store data, indices, and labels
@@ -60,7 +43,16 @@ def get_ids():
 
 
 def get_labels():
+    if isinstance(DATA.LABELS, list):
+        return torch.tensor([])
     return DATA.LABELS
+
+
+def name_splitter(ids, dataset):
+    if dataset is 'MVK':
+        return ids.split('-', 1)
+    else:
+        return ids.split('_', 1)
 
 
 def set_data(new_data=None, new_ids=None, new_labels=None):

@@ -246,7 +246,8 @@ async def get_video_frames(query_params: dict):
             features = []
 
         ids = ids.decode('utf-8')
-        video_id, frame_id = ids.split('_', 1)
+        video_id, frame_id = db.name_splitter(ids, dataset)
+        ids = ids.replace('-', '_')
 
         tmp_dict = {
             'uri': f'{dataset}/{video_id}/{ids}.jpg',
@@ -304,7 +305,8 @@ async def get_random_frame(query_params: dict = {}):
             features = []
 
         ids = ids.decode('utf-8')
-        video_id, frame_id = ids.split('_', 1)
+        video_id, frame_id = db.name_splitter(ids, dataset)
+        ids = ids.replace('-', '_')
 
         tmp_dict = {
             'uri': f'{dataset}/{video_id}/{ids}.jpg',
