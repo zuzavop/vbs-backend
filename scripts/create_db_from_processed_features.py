@@ -104,7 +104,7 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
         label_embeddings = [
             os.path.join(root_directory, f)
             for f in os.listdir(root_directory)
-            if f.endswith('.ptt')
+            if f.endswith('.ptt') and MODEL in f
         ]
         print(f'Found {label_embeddings} embeddings')
 

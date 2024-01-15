@@ -33,7 +33,7 @@ def load_laion(path):
     noun_lists = load_noun_lists(path)
     for noun_list in noun_lists:
         file_name, noun_list = noun_list
-        result_path = os.path.join(path, f'{file_name[:-4]}-laion.ptt')
+        result_path = os.path.join(path, f'{file_name[:-4]}-clip-laion.ptt')
 
         if not os.path.exists(result_path):
             print(f'Process noun list: {file_name}')
@@ -64,7 +64,7 @@ def load_open_clip(path):
     noun_lists = load_noun_lists(path)
     for noun_list in noun_lists:
         file_name, noun_list = noun_list
-        result_path = os.path.join(path, f'{file_name[:-4]}-clip.ptt')
+        result_path = os.path.join(path, f'{file_name[:-4]}-clip-openai.ptt')
 
         if not os.path.exists(result_path):
             print(f'Process noun list: {file_name}')
