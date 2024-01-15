@@ -71,7 +71,7 @@ async def text_query(query_params: dict):
     query = query_params.get('query', '')
     k = min(query_params.get('k', c.BASE_K), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
-    model = query_params.get('model', c.BASE_MODEL).upper()
+    model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -122,7 +122,7 @@ async def image_query(
 
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
-    model = query_params.get('model', c.BASE_MODEL).upper()
+    model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -181,7 +181,7 @@ async def image_query_by_id(query_params: dict):
     item_id = query_params.get('item_id', '')
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
-    model = query_params.get('model', c.BASE_MODEL).upper()
+    model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -233,7 +233,7 @@ async def get_video_frames(query_params: dict):
     item_id = query_params.get('item_id', '')
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
-    model = query_params.get('model', c.BASE_MODEL).upper()
+    model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -294,7 +294,7 @@ async def get_random_frame(query_params: dict = {}):
     Get URI of random frame.
     '''
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
-    model = query_params.get('model', c.BASE_MODEL).upper()
+    model = query_params.get('model', c.BASE_MODEL)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
