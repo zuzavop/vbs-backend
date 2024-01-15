@@ -76,7 +76,7 @@ def load_open_clip(path):
             )
 
             inputs = processor(
-                text=[[f'a photo of {n}' for n in noun_list]],
+                text=[f'a photo of {n}' for n in noun_list],
                 return_tensors="pt",
                 padding=True,
             )
