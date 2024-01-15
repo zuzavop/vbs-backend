@@ -49,7 +49,7 @@ def get_labels():
 
 
 def name_splitter(ids, dataset):
-    if dataset == 'MVK':
+    if dataset in ['MVK', 'VBSLHE']:
         return ids.split('-', 1)
     else:
         return ids.split('_', 1)

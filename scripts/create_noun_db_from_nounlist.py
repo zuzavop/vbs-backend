@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 import argparse
 
 import os
@@ -8,6 +10,7 @@ import open_clip
 from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 
 
+# Load all available noun lists in the selected directory
 def load_noun_lists(path):
     noun_files = [os.path.join(path, f) for f in os.listdir(path) if f.endswith('.txt')]
 
@@ -20,6 +23,7 @@ def load_noun_lists(path):
     return noun_lists
 
 
+# Scale normalization for features
 def normalize(features):
     return features / features.norm(dim=-1, keepdim=True)
 
@@ -29,7 +33,7 @@ def load_laion(path):
     noun_lists = load_noun_lists(path)
     for noun_list in noun_lists:
         file_name, noun_list = noun_list
-        result_path = os.path.join(path, f'{file_name[:-4]}.ptt')
+        result_path = os.path.join(path, f'{file_name[:-4]}-laion.ptt')
 
         if not os.path.exists(result_path):
             print(f'Process noun list: {file_name}')
@@ -60,7 +64,7 @@ def load_open_clip(path):
     noun_lists = load_noun_lists(path)
     for noun_list in noun_lists:
         file_name, noun_list = noun_list
-        result_path = os.path.join(path, f'{file_name[:-4]}.ptt')
+        result_path = os.path.join(path, f'{file_name[:-4]}-clip.ptt')
 
         if not os.path.exists(result_path):
             print(f'Process noun list: {file_name}')

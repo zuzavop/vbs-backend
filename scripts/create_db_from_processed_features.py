@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 import argparse
 
 import os
@@ -25,9 +27,6 @@ class memory_data_storage:
 
 
 # Normalization
-# def normalize(data):
-#     data = data / np.linalg.norm(data, axis=1, keepdims=True)
-#     return data
 def normalize(features):
     return features / features.norm(dim=-1, keepdim=True)
 
@@ -46,6 +45,7 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
     )
     print(f'Internal Storage at: {internal_storage}')
 
+    # If the file does not exist, create new datbase file
     if not os.path.exists(internal_storage):
         start_time = time.time()
 
@@ -97,7 +97,8 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
         # Normalize to reduce numbers
         data = normalize(data)
 
-        top_k = 10
+        # Take the top k labels based on the rank
+        top_k = 100  # First was 10
 
         # Load label embeddings
         label_embeddings = [
@@ -106,6 +107,8 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
             if f.endswith('.ptt')
         ]
         print(f'Found {label_embeddings} embeddings')
+
+        # Process loaded label files to gain label embeddings
         labels = []
         for label_embedding in label_embeddings:
             label_embeds = torch.load(label_embedding)
