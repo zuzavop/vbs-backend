@@ -33,6 +33,7 @@ Each query has a time limit (e.g., 5-7 minutes) and is rewarded on success with 
     - [Get Video Image](#get-video-image)
   - [Running Tests](#running-tests)
   - [License](#license)
+  - [Reference](#reference)
 
 ## Getting Started
 
@@ -89,7 +90,7 @@ docker-compose up --build
 ## API Documentation
 
 In general, there are several default parameters available for every query:  
-Defaults: `{"k": 1000, "dataset": "V3C", "model": "clip-laion", "add_features"="False", "speed_up"="True"}`  
+Defaults: `{"k": 1000, "dataset": "V3C", "model": "clip-laion", "add_features": 0, "max_labels": 10, "speed_up": 1}`  
 `"add_features"` adds features to the returning json depending on the `"dataset"` and `"model"`.  
 `"speed_up"` enables a download of the json file which speeds up the whole process.  
 
@@ -207,3 +208,15 @@ Ensure that you have set up any necessary test data or configurations before run
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Reference
+
+```
+@Article{lokoc_prak_2024,
+  author  = {Jakub Loko\v{c} and Zuzana Vopálková and Michael Stroh and Raphael Buchmueller and Udo Schlegel},
+  journal = {VBS 2024 at MMM 2024},
+  title   = {{PraK Tool: An Interactive Search Tool Based on Video Data Services}},
+  year    = {2024},
+}
+
+```
