@@ -59,25 +59,28 @@ def json_response_creator(dict_for_json: dict) -> Response:
     return resp
 
 
-# Define the 'textQuery' route
-@app.post('/textQuery/')
-async def text_query(query_params: dict):
-    '''
-    Get a list of images based on a text query.
-    '''
-    start_time = time.time()
-    l.logger.info(query_params)
+def generate_min_return_dictionary(images, dataset, add_features=True, max_labels=10):
+    # Create return dictionary
+    ret_dict = []
+    for ids, features, labels in images:
+        if not add_features:
+            features = []
 
-    query = query_params.get('query', '')
-    k = min(query_params.get('k', c.BASE_K), 10000)
-    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
-    model = query_params.get('model', c.BASE_MODEL)
-    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
-    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+        ids = ids.decode('utf-8')
+        video_id, frame_id = db.name_splitter(ids, dataset)
+        ids = ids.replace('-', '_')
 
-    # Call the function to retrieve images
-    images = fs.get_images_by_text_query(query, k, dataset, model)
+        tmp_dict = {
+            'uri': f'{dataset}/{video_id}/{ids}.jpg',
+            'id': [video_id, frame_id],
+            'features': features,
+            'label': labels[:max_labels],
+        }
+        ret_dict.append(tmp_dict)
+    return ret_dict
 
+
+def generate_return_dictionary(images, dataset, add_features=True, max_labels=10):
     # Create return dictionary
     ret_dict = []
     for ids, rank, score, features, labels in images:
@@ -94,9 +97,34 @@ async def text_query(query_params: dict):
             'score': score,
             'id': [video_id, frame_id],
             'features': features,
-            'label': labels,
+            'label': labels[:max_labels],
         }
         ret_dict.append(tmp_dict)
+    return ret_dict
+
+
+# Define the 'textQuery' route
+@app.post('/textQuery/')
+async def text_query(query_params: dict):
+    '''
+    Get a list of images based on a text query.
+    '''
+    start_time = time.time()
+    l.logger.info(query_params)
+
+    query = query_params.get('query', '')
+    k = min(query_params.get('k', c.BASE_K), 10000)
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    model = query_params.get('model', c.BASE_MODEL)
+    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+
+    # Call the function to retrieve images
+    images = fs.get_images_by_text_query(query, k, dataset, model)
+
+    # Create return dictionary
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/textQuery: {execution_time:.6f} secs')
@@ -123,6 +151,7 @@ async def image_query(
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
+    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -136,24 +165,7 @@ async def image_query(
         images = fs.get_images_by_image_query(uploaded_image, k, dataset, model)
 
         # Create return dictionary
-        ret_dict = []
-        for ids, rank, score, features, labels in images:
-            if not add_features:
-                features = []
-
-            ids = ids.decode('utf-8')
-            video_id, frame_id = db.name_splitter(ids, dataset)
-            ids = ids.replace('-', '_')
-
-            tmp_dict = {
-                'uri': f'{dataset}/{video_id}/{ids}.jpg',
-                'rank': rank,
-                'score': score,
-                'id': [video_id, frame_id],
-                'features': features,
-                'label': labels,
-            }
-            ret_dict.append(tmp_dict)
+        ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
 
     except Exception as e:
         ret_dict = {'error': str(e)}
@@ -182,6 +194,7 @@ async def image_query_by_id(query_params: dict):
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
+    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -191,24 +204,7 @@ async def image_query_by_id(query_params: dict):
     images = fs.get_images_by_image_id(item_id, k, dataset, model)
 
     # Create return dictionary
-    ret_dict = []
-    for ids, rank, score, features, labels in images:
-        if not add_features:
-            features = []
-
-        ids = ids.decode('utf-8')
-        video_id, frame_id = db.name_splitter(ids, dataset)
-        ids = ids.replace('-', '_')
-
-        tmp_dict = {
-            'uri': f'{dataset}/{video_id}/{ids}.jpg',
-            'rank': rank,
-            'score': score,
-            'id': [video_id, frame_id],
-            'features': features,
-            'label': labels,
-        }
-        ret_dict.append(tmp_dict)
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/imageQueryByID: {execution_time:.6f} secs')
@@ -234,6 +230,7 @@ async def get_video_frames(query_params: dict):
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
+    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -243,22 +240,7 @@ async def get_video_frames(query_params: dict):
     images = fs.get_video_images_by_id(item_id, k, dataset, model)
 
     # Create return dictionary
-    ret_dict = []
-    for ids, features, labels in images:
-        if not add_features:
-            features = []
-
-        ids = ids.decode('utf-8')
-        video_id, frame_id = db.name_splitter(ids, dataset)
-        ids = ids.replace('-', '_')
-
-        tmp_dict = {
-            'uri': f'{dataset}/{video_id}/{ids}.jpg',
-            'id': [video_id, frame_id],
-            'features': features,
-            'label': labels,
-        }
-        ret_dict.append(tmp_dict)
+    ret_dict = generate_min_return_dictionary(images, data, add_features, max_labels)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/getVideoFrames: {execution_time:.6f} secs')
@@ -295,6 +277,7 @@ async def get_random_frame(query_params: dict = {}):
     '''
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
+    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -302,22 +285,7 @@ async def get_random_frame(query_params: dict = {}):
     images = fs.get_random_video_frame(dataset, model)
 
     # Create return dictionary
-    ret_dict = []
-    for ids, features, labels in images:
-        if not add_features:
-            features = []
-
-        ids = ids.decode('utf-8')
-        video_id, frame_id = db.name_splitter(ids, dataset)
-        ids = ids.replace('-', '_')
-
-        tmp_dict = {
-            'uri': f'{dataset}/{video_id}/{ids}.jpg',
-            'id': [video_id, frame_id],
-            'features': features,
-            'label': labels,
-        }
-        ret_dict.append(tmp_dict)
+    ret_dict = generate_min_return_dictionary(images, dataset, add_features, max_labels)
 
     if download_speed_up:
         return attachment_response_creator(ret_dict)
