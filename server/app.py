@@ -115,7 +115,7 @@ async def text_query(query_params: dict):
     k = min(query_params.get('k', c.BASE_K), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
-    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -150,7 +150,7 @@ async def image_query(
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
-    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -193,7 +193,7 @@ async def image_query_by_id(query_params: dict):
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
-    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -229,7 +229,7 @@ async def get_video_frames(query_params: dict):
     k = min(query_params.get('k', 1000), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
-    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
@@ -276,7 +276,7 @@ async def get_random_frame(query_params: dict = {}):
     '''
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
-    max_labels = bool(query_params.get('max_labels', c.BASE_MAX_LABELS))
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
 
