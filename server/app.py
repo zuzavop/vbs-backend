@@ -18,7 +18,6 @@ import database as db
 
 # Create an instance of the FastAPI class
 app = FastAPI()
-
 origins = ['*']  # ['http://localhost', 'http://acheron.ms.mff.cuni.cz/']
 
 app.add_middleware(
@@ -240,7 +239,7 @@ async def get_video_frames(query_params: dict):
     images = fs.get_video_images_by_id(item_id, k, dataset, model)
 
     # Create return dictionary
-    ret_dict = generate_min_return_dictionary(images, data, add_features, max_labels)
+    ret_dict = generate_min_return_dictionary(images, dataset, add_features, max_labels)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/getVideoFrames: {execution_time:.6f} secs')
