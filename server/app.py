@@ -69,7 +69,7 @@ def generate_min_return_dictionary(images, dataset, add_features=True, max_label
         video_id, frame_id = db.name_splitter(ids, dataset)
         ids = ids.replace('-', '_')
 
-        if isinstance(labels.list):
+        if isinstance(labels, list):
             labels = labels[:max_labels]
 
         tmp_dict = {

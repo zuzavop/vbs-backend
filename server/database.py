@@ -98,10 +98,8 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
                         file_name = os.path.basename(file_path)
                         dataset_name = file_path.split('/')[-3]
                         feature_name = file_name.split('__')[-1].split('.')[0]
-                        file_size = os.path.getsize(file_path)
-                        l.logger.info(file_size)
                         datasets_and_features.append(
-                            [dataset_name, feature_name, file_path, file_size]
+                            [dataset_name, feature_name, file_path]
                         )
 
     # Get sizes of all datasets
@@ -112,12 +110,12 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     # Check available models and datasets
     file_path = None
     for dataset_and_feature in datasets_and_features:
-        cur_dataset, cur_model, cur_file, file_size = dataset_and_feature
+        cur_dataset, cur_model, cur_file = dataset_and_feature
         l.logger.info(
             f'Found dataset: {cur_dataset}, model: {cur_model}, file: {cur_file}'
         )
 
-        full_sizes += file_size
+        full_sizes += os.path.getsize(cur_file)
         data_collection_name = f'{cur_dataset}-{cur_model}'
         if full_sizes < available_mem and data_collection_name not in DATA_COLLECTIONS:
             # read data and ids from hard drive
@@ -126,7 +124,6 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
 
         if cur_dataset == dataset and cur_model == model:
             file_path = cur_file
-            break
 
     l.logger.info(f'Selected dataset: {dataset}, model: {model}')
     if file_path:
