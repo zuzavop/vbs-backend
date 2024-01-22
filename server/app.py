@@ -69,11 +69,14 @@ def generate_min_return_dictionary(images, dataset, add_features=True, max_label
         video_id, frame_id = db.name_splitter(ids, dataset)
         ids = ids.replace('-', '_')
 
+        if isinstance(labels.list):
+            labels = labels[:max_labels]
+
         tmp_dict = {
             'uri': f'{dataset}/{video_id}/{ids}.jpg',
             'id': [video_id, frame_id],
             'features': features,
-            'label': labels[:max_labels],
+            'label': labels,
         }
         ret_dict.append(tmp_dict)
     return ret_dict
@@ -90,13 +93,16 @@ def generate_return_dictionary(images, dataset, add_features=True, max_labels=10
         video_id, frame_id = db.name_splitter(ids, dataset)
         ids = ids.replace('-', '_')
 
+        if isinstance(labels, list):
+            labels = labels[:max_labels]
+
         tmp_dict = {
             'uri': f'{dataset}/{video_id}/{ids}.jpg',
             'rank': rank,
             'score': score,
             'id': [video_id, frame_id],
             'features': features,
-            'label': labels[:max_labels],
+            'label': labels,
         }
         ret_dict.append(tmp_dict)
     return ret_dict

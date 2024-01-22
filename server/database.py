@@ -5,6 +5,7 @@ import dill
 import h5py
 import time
 import torch
+import psutil
 
 import pandas as pd
 import numpy as np
@@ -16,6 +17,12 @@ import configs as c
 
 
 max_depth = 2
+
+
+def get_available_memory():
+    mem_info = psutil.virtual_memory()
+    available_memory = mem_info.available
+    return available_memory
 
 
 # Class structure to store data, indices, and labels
@@ -31,6 +38,7 @@ class memory_data_storage:
 
 
 DATA = None
+DATA_COLLECTIONS = {}
 CUR_SELECTION = None
 
 
@@ -62,6 +70,7 @@ def set_data(new_data=None, new_ids=None, new_labels=None):
 
 def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     global DATA
+    global DATA_COLLECTIONS
     global CUR_SELECTION
 
     if dataset == '':
@@ -89,26 +98,45 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
                         file_name = os.path.basename(file_path)
                         dataset_name = file_path.split('/')[-3]
                         feature_name = file_name.split('__')[-1].split('.')[0]
+                        file_size = os.path.getsize(file_path)
+                        l.logger.info(file_size)
                         datasets_and_features.append(
-                            [dataset_name, feature_name, file_path]
+                            [dataset_name, feature_name, file_path, file_size]
                         )
+
+    # Get sizes of all datasets
+    full_sizes = 0
+    available_mem = get_available_memory()
+    l.logger.info(available_mem)
 
     # Check available models and datasets
     file_path = None
     for dataset_and_feature in datasets_and_features:
-        cur_dataset, cur_model, cur_file = dataset_and_feature
+        cur_dataset, cur_model, cur_file, file_size = dataset_and_feature
         l.logger.info(
             f'Found dataset: {cur_dataset}, model: {cur_model}, file: {cur_file}'
         )
+
+        full_sizes += file_size
+        data_collection_name = f'{cur_dataset}-{cur_model}'
+        if full_sizes < available_mem and data_collection_name not in DATA_COLLECTIONS:
+            # read data and ids from hard drive
+            with open(cur_file, 'rb') as f:
+                DATA_COLLECTIONS[data_collection_name] = dill.load(f)
+
         if cur_dataset == dataset and cur_model == model:
             file_path = cur_file
             break
 
     l.logger.info(f'Selected dataset: {dataset}, model: {model}')
     if file_path:
-        # read data and ids from hard drive
-        with open(file_path, 'rb') as f:
-            DATA = dill.load(f)
+        data_collection_name = f'{dataset}-{model}'
+        if data_collection_name in DATA_COLLECTIONS:
+            DATA = DATA_COLLECTIONS[data_collection_name]
+        else:
+            # read data and ids from hard drive
+            with open(file_path, 'rb') as f:
+                DATA = dill.load(f)
 
         execution_time = time.time() - start_time
         l.logger.info(f'Reading in features took: {execution_time:.6f} secs')
