@@ -73,6 +73,8 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     global DATA_COLLECTIONS
     global CUR_SELECTION
 
+    l.logger.info(f'Selected dataset: {dataset}, model: {model}')
+
     if dataset == '':
         dataset = c.BASE_DATASET
     if model == '':
@@ -80,8 +82,15 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
 
     # Check if dataset and model are already loaded
     if [dataset, model] == CUR_SELECTION:
+        l.logger.info(f'Already selected dataset: {dataset}, model: {model}')
         return
     CUR_SELECTION = [dataset, model]
+
+    data_collection_name = f'{dataset}-{model}'
+    if data_collection_name in DATA_COLLECTIONS:
+        l.logger.info(f'Already loaded dataset: {dataset}, model: {model}')
+        DATA = DATA_COLLECTIONS[data_collection_name]
+        return
 
     l.logger.info('Start to load pre-generated embeddings')
     start_time = time.time()
@@ -125,7 +134,6 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
         if cur_dataset == dataset and cur_model == model:
             file_path = cur_file
 
-    l.logger.info(f'Selected dataset: {dataset}, model: {model}')
     if file_path:
         data_collection_name = f'{dataset}-{model}'
         if data_collection_name in DATA_COLLECTIONS:
