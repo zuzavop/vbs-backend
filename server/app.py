@@ -66,7 +66,7 @@ def generate_min_return_dictionary(images, dataset, add_features=True, max_label
             features = []
 
         ids = ids.decode('utf-8')
-        video_id, frame_id = db.name_splitter(ids, dataset)
+        video_id, frame_id = ids.split(db.name_splitter(dataset), 1)
         ids = ids.replace('-', '_')
 
         if isinstance(labels, list):
@@ -90,7 +90,7 @@ def generate_return_dictionary(images, dataset, add_features=True, max_labels=10
             features = []
 
         ids = ids.decode('utf-8')
-        video_id, frame_id = db.name_splitter(ids, dataset)
+        video_id, frame_id = ids.split(db.name_splitter(dataset), 1)
         ids = ids.replace('-', '_')
 
         if isinstance(labels, list):
@@ -296,6 +296,16 @@ async def get_random_frame(query_params: dict = {}):
         return attachment_response_creator(ret_dict)
     else:
         return json_response_creator(ret_dict)
+
+
+# Define the 'getTimeInterval' route
+@app.get('/getTimeInterval/')
+async def get_time_interval(query_params: dict = {}):
+    '''
+    Get the time interval for a video frame.
+    '''
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    model = query_params.get('model', c.BASE_MODEL)
 
 
 # Define a route and its handler function

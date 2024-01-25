@@ -129,6 +129,10 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     ids = db.get_ids()
     labels = db.get_labels()
 
+    # Get the video id and frame_id
+    video_id, frame_id = db.uri_spliter(id)
+    id = video_id + db.name_splitter(dataset) + frame_id
+
     # Find the index of the provided 'id' within the 'ids' array
     idx = np.where(ids == id.encode('utf-8'))[0][0]
     image_features = data[idx]
@@ -174,8 +178,18 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     ids = db.get_ids()
     labels = db.get_labels()
 
+    # Get the video id and frame_id
+    video_id, frame_id = db.uri_spliter(id)
+    id = video_id + db.name_splitter(dataset) + frame_id
+
     # Find the index of the provided 'id' within the 'ids' array
-    idx = np.where(ids == id.encode('utf-8'))[0][0]
+    condition = ids == id.encode('utf-8')
+    if not np.any(condition):
+        idx = 0
+        while not ids[idx].decode('utf-8').startswith(video_id):
+            idx += 1
+    else:
+        idx = np.where(condition)[0][0]
 
     # Set start and end indices
     if k == 0:
@@ -187,9 +201,6 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
 
     # Get all video frames for the video
     if k == -1:
-        # Get video id
-        video_id = id.split('_')[0]
-
         # Get video frames before the provided
         cur_i = 0
         while ids[idx - cur_i].decode('utf-8').startswith(video_id):

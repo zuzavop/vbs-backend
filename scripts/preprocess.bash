@@ -13,6 +13,7 @@ if [ -d "$directory_path" ]; then
   # Use a for loop to iterate through subdirectories
   for subdirectory in "$directory_path"/*; do
     if [ -d "$subdirectory" ]; then
+      echo "-----------------------------------------"
       echo "Subdirectory: $(basename "$subdirectory")"
 
       # Use a nested for loop to iterate through files in the subdirectory

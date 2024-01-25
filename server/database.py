@@ -19,10 +19,9 @@ import configs as c
 max_depth = 2
 
 
-def get_available_memory():
-    mem_info = psutil.virtual_memory()
-    available_memory = mem_info.available
-    return available_memory
+DATA = None
+DATA_COLLECTIONS = {}
+CUR_SELECTION = None
 
 
 # Class structure to store data, indices, and labels
@@ -37,9 +36,10 @@ class memory_data_storage:
         self.LABELS = new_labels
 
 
-DATA = None
-DATA_COLLECTIONS = {}
-CUR_SELECTION = None
+def get_available_memory():
+    mem_info = psutil.virtual_memory()
+    available_memory = mem_info.available
+    return available_memory
 
 
 def get_data():
@@ -56,11 +56,18 @@ def get_labels():
     return DATA.LABELS
 
 
-def name_splitter(ids, dataset):
+def name_splitter(dataset):
     if dataset in ['MVK', 'VBSLHE']:
-        return ids.split('-', 1)
+        return '-'
     else:
-        return ids.split('_', 1)
+        return '_'
+
+
+def uri_spliter(id, dataset):
+    if dataset in ['V3C', 'VBSLHE']:
+        return id.split('_', 1)
+    else:
+        return id.rsplit('_', 1)
 
 
 def set_data(new_data=None, new_ids=None, new_labels=None):
