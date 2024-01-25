@@ -130,7 +130,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     labels = db.get_labels()
 
     # Get the video id and frame_id
-    video_id, frame_id = db.uri_spliter(id)
+    video_id, frame_id = db.uri_spliter(id, dataset)
     id = video_id + db.name_splitter(dataset) + frame_id
 
     # Find the index of the provided 'id' within the 'ids' array
@@ -179,7 +179,7 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     labels = db.get_labels()
 
     # Get the video id and frame_id
-    video_id, frame_id = db.uri_spliter(id)
+    video_id, frame_id = db.uri_spliter(id, dataset)
     id = video_id + db.name_splitter(dataset) + frame_id
 
     # Find the index of the provided 'id' within the 'ids' array
