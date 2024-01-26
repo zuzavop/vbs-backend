@@ -38,6 +38,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     data = db.get_data()
     ids = db.get_ids()
     labels = db.get_labels()
+    db_time = db.get_time()
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(text_features, data)
@@ -48,6 +49,13 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
+    l.logger.info(f'{db_time}')
+    db_time = [
+        db_time[x.decode('utf-8')]
+        for x in ids[sorted_indices].tolist()
+        if x.decode('utf-8') in db_time
+    ]
+
     # Give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
@@ -56,6 +64,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
             similarities[sorted_indices].tolist(),
             selected_data.tolist(),
             labels[sorted_indices].tolist(),
+            db_time,
         )
     )
 
@@ -67,6 +76,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     del labels
     del similarities
     del sorted_indices
+    del db_time
 
     # Return a list of (ID, rank, score, feature, label) tuples
     return most_similar_samples
@@ -86,6 +96,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     data = db.get_data()
     ids = db.get_ids()
     labels = db.get_labels()
+    db_time = db.get_time()
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(image_features, data)
@@ -96,6 +107,12 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
+    db_time = [
+        db_time[x.decode('utf-8')]
+        for x in ids[sorted_indices].tolist()
+        if x.decode('utf-8') in db_time
+    ]
+
     # Give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
@@ -104,6 +121,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
             similarities[sorted_indices].tolist(),
             selected_data.tolist(),
             labels[sorted_indices].tolist(),
+            db_time,
         )
     )
 
@@ -115,6 +133,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     del labels
     del similarities
     del sorted_indices
+    del db_time
 
     # Return a list of (ID, rank, score, feature, label) tuples
     return most_similar_samples
@@ -128,6 +147,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     data = db.get_data()
     ids = db.get_ids()
     labels = db.get_labels()
+    db_time = db.get_time()
 
     # Get the video id and frame_id
     video_id, frame_id = db.uri_spliter(id, dataset)
@@ -146,6 +166,12 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
+    db_time = [
+        db_time[x.decode('utf-8')]
+        for x in ids[sorted_indices].tolist()
+        if x.decode('utf-8') in db_time
+    ]
+
     # Give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
@@ -154,6 +180,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
             similarities[sorted_indices].tolist(),
             selected_data.tolist(),
             labels[sorted_indices].tolist(),
+            db_time,
         )
     )
 
@@ -165,6 +192,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     del labels
     del similarities
     del sorted_indices
+    del db_time
 
     # Return a list of (ID, rank, score, feature, label) tuples
     return most_similar_samples
@@ -177,6 +205,7 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     data = db.get_data()
     ids = db.get_ids()
     labels = db.get_labels()
+    db_time = db.get_time()
 
     # Get the video id and frame_id
     video_id, frame_id = db.uri_spliter(id, dataset)
@@ -222,9 +251,20 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         sliced_features = (sliced_features * c.BASE_MULTIPLIER).int()
 
+    db_time = [
+        db_time[x.decode('utf-8')]
+        for x in sliced_ids.tolist()
+        if x.decode('utf-8') in db_time
+    ]
+
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
-        zip(sliced_ids.tolist(), sliced_features.tolist(), sliced_labels.tolist())
+        zip(
+            sliced_ids.tolist(),
+            sliced_features.tolist(),
+            sliced_labels.tolist(),
+            db_time,
+        )
     )
 
     del data
@@ -233,6 +273,7 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     del sliced_ids
     del sliced_features
     del sliced_labels
+    del db_time
 
     # Return a list of (ID, feature, label) tuples
     return video_images
@@ -245,6 +286,7 @@ def get_random_video_frame(dataset: str, model: str):
     data = db.get_data()
     ids = db.get_ids()
     labels = db.get_labels()
+    db_time = db.get_time()
 
     # Generate a random index within the valid range of IDs
     random_id = np.random.randint(0, len(ids))
@@ -262,9 +304,20 @@ def get_random_video_frame(dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_features = (selected_features * c.BASE_MULTIPLIER).int()
 
+    db_time = [
+        db_time[x.decode('utf-8')]
+        for x in selected_ids.tolist()
+        if x.decode('utf-8') in db_time
+    ]
+
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
-        zip(selected_ids.tolist(), selected_features.tolist(), selected_labels.tolist())
+        zip(
+            selected_ids.tolist(),
+            selected_features.tolist(),
+            selected_labels.tolist(),
+            db_time,
+        )
     )
 
     del data
@@ -273,6 +326,7 @@ def get_random_video_frame(dataset: str, model: str):
     del selected_ids
     del selected_features
     del selected_labels
+    del db_time
 
     # Return a list of (ID, feature, label) tuples
     return video_images

@@ -26,7 +26,6 @@ if [ -d "$directory_path" ]; then
               echo "Found $element in $file"
               python create_noun_db_from_nounlist.py --base-dir "$subdirectory" --model-name "$element"
               if [[ "$file" == *.tar.gz ]]; then
-
                 # Extract the content only if not already extracted
                 extraction_directory="${file%.tar.gz}"
                 echo "Try to extract $file to: $extraction_directory"
@@ -50,6 +49,23 @@ if [ -d "$directory_path" ]; then
           done
         fi
       done
+
+      # Check for *.tar.gz file with 'msb' in the name
+      tar_file=$(find "$subdirectory" -type f -name "msb.tar.gz")
+      if [ -n "$tar_file" ]; then
+          # Extract the tar.gz file
+          tar -xzf "$tar_file"
+          echo "Found *.tar.gz file with 'msb' in the name: $tar_file"
+      fi
+
+      # Check for a directory with 'msb' in the name and *.tsv files
+      dir_with_msb=$(find "$subdirectory" -type d -name "msb" -exec sh -c 'test -n "$(find "{}" -maxdepth 1 -name '\''*.tsv'\'' -print -quit)"' \; -print)
+      if [ -n "$dir_with_msb" ]; then
+          echo "Found directory with 'msb' in the name and *.tsv files: $dir_with_msb"
+          # Start script to extend all database files
+          python extend_db_with_time_stamps.py --db-dir "$subdirectory" --msb-dir "$dir_with_msb"
+      fi
+
     fi
   done
 else

@@ -2,7 +2,7 @@ fastapi
 uvicorn
 pillow
 numpy
-pandas
+pandas==2.1.2
 open_clip_torch
 python-multipart
 transformers

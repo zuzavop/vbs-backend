@@ -61,7 +61,7 @@ def json_response_creator(dict_for_json: dict) -> Response:
 def generate_min_return_dictionary(images, dataset, add_features=True, max_labels=10):
     # Create return dictionary
     ret_dict = []
-    for ids, features, labels in images:
+    for ids, features, labels, time in images:
         if not add_features:
             features = []
 
@@ -77,6 +77,7 @@ def generate_min_return_dictionary(images, dataset, add_features=True, max_label
             'id': [video_id, frame_id],
             'features': features,
             'label': labels,
+            'time': time,
         }
         ret_dict.append(tmp_dict)
     return ret_dict
@@ -85,7 +86,7 @@ def generate_min_return_dictionary(images, dataset, add_features=True, max_label
 def generate_return_dictionary(images, dataset, add_features=True, max_labels=10):
     # Create return dictionary
     ret_dict = []
-    for ids, rank, score, features, labels in images:
+    for ids, rank, score, features, labels, time in images:
         if not add_features:
             features = []
 
@@ -103,6 +104,7 @@ def generate_return_dictionary(images, dataset, add_features=True, max_labels=10
             'id': [video_id, frame_id],
             'features': features,
             'label': labels,
+            'time': time,
         }
         ret_dict.append(tmp_dict)
     return ret_dict

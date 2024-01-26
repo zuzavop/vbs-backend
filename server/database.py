@@ -24,16 +24,18 @@ DATA_COLLECTIONS = {}
 CUR_SELECTION = None
 
 
-# Class structure to store data, indices, and labels
+# Class structure to store data, indices, labels, and the time
 class memory_data_storage:
     DATA = None
     IDS = None
     LABELS = None
+    TIME = None
 
-    def __init__(self, new_data=None, new_ids=None, new_labels=None):
+    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None):
         self.DATA = new_data
         self.IDS = new_ids
         self.LABELS = new_labels
+        self.TIME = new_time
 
 
 def get_available_memory():
@@ -54,6 +56,13 @@ def get_labels():
     if isinstance(DATA.LABELS, list):
         return torch.tensor([-1] * len(DATA.IDS))
     return DATA.LABELS
+
+
+def get_time():
+    if hasattr(DATA, 'TIME'):
+        return DATA.TIME
+    else:
+        return {}
 
 
 def name_splitter(dataset):

@@ -19,11 +19,13 @@ class memory_data_storage:
     DATA = None
     IDS = None
     LABELS = None
+    TIME = None
 
-    def __init__(self, new_data=None, new_ids=None, new_labels=None):
+    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None):
         self.DATA = new_data
         self.IDS = new_ids
         self.LABELS = new_labels
+        self.TIME = new_time
 
 
 # Normalization
