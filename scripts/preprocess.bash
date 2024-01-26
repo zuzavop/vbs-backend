@@ -12,6 +12,12 @@ my_array=("clip-laion") # "clip-laion" "clip-openai" "aladin"
 if [ -d "$directory_path" ]; then
   # Use a for loop to iterate through subdirectories
   for subdirectory in "$directory_path"/*; do
+
+    if [ "$subdirectory" == "images" ]; then
+        # Continue with the loop
+        continue
+    fi
+
     if [ -d "$subdirectory" ]; then
       echo "-----------------------------------------"
       echo "Subdirectory: $(basename "$subdirectory")"
@@ -54,7 +60,7 @@ if [ -d "$directory_path" ]; then
       tar_file=$(find "$subdirectory" -type f -name "msb.tar.gz")
       if [ -n "$tar_file" ]; then
           # Extract the tar.gz file
-          tar -xzf "$tar_file"
+          tar -xzvf "$tar_file"
           echo "Found *.tar.gz file with 'msb' in the name: $tar_file"
       fi
 
