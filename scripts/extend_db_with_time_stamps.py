@@ -48,7 +48,7 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
 
                 print(f'Starting to add time stamps to the database')
                 ids = np.array(data.IDS).astype(str)
-                for id in ids:
+                for id in tqdm(ids):
                     splits = id.split('-', 1)
                     if len(splits) < 2:
                         splits = id.split('_', 1)
@@ -56,14 +56,15 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                     msb_file = video_id + '.tsv'
                     if msb_file in msb_files:
                         msb_file = os.path.join(msb_dir, msb_file)
-                        df = pd.read_csv(msb_file, delimiter='\t')
-                        time = df[df['id_visione'] == float(frame_id)]['middletime']
-                        time_stamps.append([id, time])
+                        try:
+                            df = pd.read_csv(msb_file, delimiter='\t')
+                            time = df[df['id_visione'] == float(frame_id)]['middletime']
+                            time_stamps.append([id, time])
+                        except:
+                            print(f'Could not load {id}')
 
-                print(len(time_stamps))
-                print(len(data.IDS))
+                print(f'Found: {len(time_stamps)}, Ids: {len(data.IDS)}')
                 data.TIME = time_stamps
-                print(len(data.TIME))
                 with open(internal_storage, 'wb') as f:
                     dill.dump(data, f)
                 print(f'Successful writing file {internal_storage}')
