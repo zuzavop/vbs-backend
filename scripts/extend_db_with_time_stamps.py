@@ -44,7 +44,7 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
             with open(internal_storage, 'rb') as f:
                 data = dill.load(f)
             if data.TIME is None or data.TIME == {} or not hasattr(data, 'TIME'):
-                time_stamps = {}
+                time_stamps = []
 
                 print(f'Starting to add time stamps to the database')
                 ids = np.array(data.IDS).astype(str)
@@ -58,7 +58,7 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                         msb_file = os.path.join(msb_dir, msb_file)
                         df = pd.read_csv(msb_file, delimiter='\t')
                         time = df[df['id_visione'] == float(frame_id)]['middletime']
-                        time_stamps[id] = time
+                        time_stamps.append([id, time])
 
                 print(len(time_stamps))
                 print(len(data.IDS))

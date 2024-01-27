@@ -40,7 +40,7 @@ if [ -d "$directory_path" ]; then
                 else
                   # Create directories and extract files from found archive
                   mkdir -p "$extraction_directory"
-                  tar -xzvf "$file" -C "$extraction_directory"
+                  tar -xzf "$file" -C "$extraction_directory"
                   if [ $? -eq 0 ]; then
                     echo "Extraction successful: $file"
                   else
@@ -60,7 +60,7 @@ if [ -d "$directory_path" ]; then
       tar_file=$(find "$subdirectory" -type f -name "msb.tar.gz")
       if [ -n "$tar_file" ]; then
           # Extract the tar.gz file
-          tar -xzvf "$tar_file"
+          tar -xzf "$tar_file"
           echo "Found *.tar.gz file with 'msb' in the name: $tar_file"
       fi
 
