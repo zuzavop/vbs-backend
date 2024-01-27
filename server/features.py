@@ -50,11 +50,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
     l.logger.info(f'{db_time}')
-    db_time = [
-        db_time[x.decode('utf-8')]
-        for x in ids[sorted_indices].tolist()
-        if x.decode('utf-8') in db_time
-    ]
+    db_time = np.array(db_time)[sorted_indices].tolist()
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -107,11 +103,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
-    db_time = [
-        db_time[x.decode('utf-8')]
-        for x in ids[sorted_indices].tolist()
-        if x.decode('utf-8') in db_time
-    ]
+    db_time = np.array(db_time)[sorted_indices].tolist()
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -166,11 +158,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
-    db_time = [
-        db_time[x.decode('utf-8')]
-        for x in ids[sorted_indices].tolist()
-        if x.decode('utf-8') in db_time
-    ]
+    db_time = np.array(db_time)[sorted_indices].tolist()
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -251,11 +239,7 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         sliced_features = (sliced_features * c.BASE_MULTIPLIER).int()
 
-    db_time = [
-        db_time[x.decode('utf-8')]
-        for x in sliced_ids.tolist()
-        if x.decode('utf-8') in db_time
-    ]
+    db_time = np.array(db_time)[start_idx:end_idx].tolist()
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
@@ -304,11 +288,7 @@ def get_random_video_frame(dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_features = (selected_features * c.BASE_MULTIPLIER).int()
 
-    db_time = [
-        db_time[x.decode('utf-8')]
-        for x in selected_ids.tolist()
-        if x.decode('utf-8') in db_time
-    ]
+    db_time = np.array(db_time)[random_id : random_id + 1].tolist()
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(

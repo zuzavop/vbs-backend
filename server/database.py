@@ -62,7 +62,7 @@ def get_time():
     if hasattr(DATA, 'TIME'):
         return DATA.TIME
     else:
-        return {}
+        return []
 
 
 def name_splitter(dataset):
