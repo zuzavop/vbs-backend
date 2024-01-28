@@ -74,7 +74,6 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                             else:
                                 df = pd.read_csv(msb_file, delimiter='\t')
                                 loaded_msb_files[msb_file] = df
-                            print(df.head())
                             selected_time_stamps = df[
                                 df['id_visione'] == float(frame_id)
                             ]
@@ -84,7 +83,6 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                                 ]
                             if selected_time_stamps.empty:
                                 selected_time_stamps = df[df['id_visione'] == frame_id]
-                            print(selected_time_stamps)
                             time_stamps.append(
                                 [
                                     id,
