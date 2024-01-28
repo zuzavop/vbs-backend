@@ -59,7 +59,7 @@ def get_labels():
 
 
 def get_time(data=None):
-    if False and data is None and hasattr(DATA, 'TIME'):
+    if data is None and hasattr(DATA, 'TIME'):
         if isinstance(DATA.TIME, str):
             with open(DATA.TIME, 'rb') as f:
                 tmp_data = dill.load(f)

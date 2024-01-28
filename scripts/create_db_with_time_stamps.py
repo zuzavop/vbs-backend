@@ -88,17 +88,23 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                         except:
                             print(f'Could not load {id}')
 
-                print(f'Found: {len(time_stamps)}, Ids: {len(data.IDS)}')
+                print(f'Found: {len(time_stamps)}, Ids: {len(ids)}')
                 data.TIME = time_stamp_storage
                 with open(internal_storage, 'wb') as f:
                     dill.dump(data, f)
+                print(f'Successful writing file {internal_storage}')
                 with open(time_stamp_storage, 'wb') as f:
                     dill.dump(time_stamps, f)
                 print(f'Successful writing file {time_stamp_storage}')
+
+                del time_stamps
+                del data
             else:
                 print(f'Already contains time stamps {internal_storage}')
         except Exception as e:
             print(f'Failed with file {internal_storage} and {e}')
+
+    del loaded_msb_files
 
 
 if __name__ == '__main__':
