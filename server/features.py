@@ -22,12 +22,13 @@ def fallback_time_stamps(ids, dataset):
     return np.array(time_stamps)
 
 
-def get_time_stamps(db_time, ids, dataset):
+def get_time_stamps(db_time, slicing, ids, dataset):
     db_time = np.array(db_time)
     l.logger.info(db_time)
     if len(db_time) < 1:
         db_time = fallback_time_stamps(ids, dataset)
     else:
+        db_time = db_time[slicing]
         db_time *= 1000
     return db_time
 
@@ -68,7 +69,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
-    db_time = get_time_stamps(db_time[sorted_indices], ids[sorted_indices], dataset)
+    db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
     l.logger.info(f'{db_time}')
 
     # Give only back the k most similar embeddings

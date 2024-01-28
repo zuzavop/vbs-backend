@@ -66,7 +66,7 @@ def get_time(data=None):
             DATA.TIME = tmp_data
         return DATA.TIME
     else:
-        return []
+        return np.array([])
 
 
 def name_splitter(dataset):
