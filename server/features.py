@@ -30,7 +30,6 @@ def get_time_stamps(db_time, slicing, ids, dataset):
         db_time = fallback_time_stamps(ids[slicing], dataset)
     else:
         db_time = db_time[slicing]
-        db_time *= 1000
     return db_time
 
 
@@ -71,7 +70,6 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
     db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
-    l.logger.info(f'{db_time}')
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(

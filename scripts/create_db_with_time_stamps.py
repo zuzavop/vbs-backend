@@ -38,6 +38,8 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
     ]
     msb_files = [file for file in os.listdir(msb_dir) if file.endswith('.tsv')]
 
+    loaded_msb_files = {}
+
     # Loop through all the database files and check if the time stamps are there
     for file in pkl_files:
         print(f'Adding to database file: {file}')
@@ -47,7 +49,13 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
             print(f'Opening file {internal_storage}')
             with open(internal_storage, 'rb') as f:
                 data = dill.load(f)
-            if data.TIME is None or data.TIME == '' or not hasattr(data, 'TIME'):
+            time_stamp_storage = f'{internal_storage[:-4]}_time.pkl'
+            if (
+                not os.path.exists(time_stamp_storage)
+                or data.TIME is None
+                or data.TIME == ''
+                or not hasattr(data, 'TIME')
+            ):
                 time_stamps = []
 
                 print(f'Starting to add time stamps to the database')
@@ -61,14 +69,26 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                     if msb_file in msb_files:
                         msb_file = os.path.join(msb_dir, msb_file)
                         try:
-                            df = pd.read_csv(msb_file, delimiter='\t')
-                            time = df[df['id_visione'] == float(frame_id)]['middletime']
-                            time_stamps.append([id, time])
+                            if msb_file in loaded_msb_files:
+                                df = loaded_msb_files[msb_file]
+                            else:
+                                df = pd.read_csv(msb_file, delimiter='\t')
+                                loaded_msb_files[msb_file] = df
+                            selected_time_stamps = df[
+                                df['id_visione'] == float(frame_id)
+                            ]
+                            time_stamps.append(
+                                [
+                                    id,
+                                    selected_time_stamps['middletime'] * 1000,
+                                    selected_time_stamps['starttime'] * 1000,
+                                    selected_time_stamps['endtime'] * 1000,
+                                ]
+                            )
                         except:
                             print(f'Could not load {id}')
 
                 print(f'Found: {len(time_stamps)}, Ids: {len(data.IDS)}')
-                time_stamp_storage = f'{internal_storage[:-4]}_time.pkl'
                 data.TIME = time_stamp_storage
                 with open(internal_storage, 'wb') as f:
                     dill.dump(data, f)
