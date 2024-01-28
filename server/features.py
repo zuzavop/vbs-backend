@@ -18,7 +18,8 @@ def fallback_time_stamps(ids, dataset):
     for id in ids:
         id = id.decode('utf-8')
         _, frame_id = id.split(db.name_splitter(dataset), 1)
-        time_stamps.append([id, float(frame_id) / 30 * 1000])
+        middle_time = float(frame_id) / 30 * 1000
+        time_stamps.append([id, middle_time, middle_time - 1000, middle_time + 1000])
     return np.array(time_stamps)
 
 
@@ -26,7 +27,7 @@ def get_time_stamps(db_time, slicing, ids, dataset):
     db_time = np.array(db_time)
     l.logger.info(db_time)
     if len(db_time) < 1:
-        db_time = fallback_time_stamps(ids, dataset)
+        db_time = fallback_time_stamps(ids[slicing], dataset)
     else:
         db_time = db_time[slicing]
         db_time *= 1000
