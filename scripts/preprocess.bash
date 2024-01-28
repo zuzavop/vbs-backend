@@ -69,7 +69,7 @@ if [ -d "$directory_path" ]; then
       if [ -n "$dir_with_msb" ]; then
           echo "Found directory with 'msb' in the name and *.tsv files: $dir_with_msb"
           # Start script to extend all database files
-          python extend_db_with_time_stamps.py --db-dir "$subdirectory" --msb-dir "$dir_with_msb"
+          python create_db_with_time_stamps.py --db-dir "$subdirectory" --msb-dir "$dir_with_msb"
       fi
 
     fi

@@ -43,7 +43,7 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
             print(f'Opening file {internal_storage}')
             with open(internal_storage, 'rb') as f:
                 data = dill.load(f)
-            if data.TIME is None or data.TIME == {} or not hasattr(data, 'TIME'):
+            if data.TIME is None or data.TIME == '' or not hasattr(data, 'TIME'):
                 time_stamps = []
 
                 print(f'Starting to add time stamps to the database')
@@ -64,10 +64,13 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                             print(f'Could not load {id}')
 
                 print(f'Found: {len(time_stamps)}, Ids: {len(data.IDS)}')
-                data.TIME = time_stamps
+                time_stamp_storage = f'{internal_storage[-4]}_time.pkl'
+                data.TIME = time_stamp_storage
                 with open(internal_storage, 'wb') as f:
                     dill.dump(data, f)
-                print(f'Successful writing file {internal_storage}')
+                with open(time_stamp_storage, 'wb') as f:
+                    dill.dump(time_stamps, f)
+                print(f'Successful writing file {time_stamp_storage}')
             else:
                 print(f'Already contains time stamps {internal_storage}')
         except Exception as e:
