@@ -260,9 +260,7 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         sliced_features = (sliced_features * c.BASE_MULTIPLIER).int()
 
-    db_time = get_time_stamps(
-        db_time, list(range(start_idx, end_idx)), sliced_ids, dataset
-    )
+    db_time = get_time_stamps(db_time, list(range(start_idx, end_idx)), ids, dataset)
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
@@ -312,7 +310,7 @@ def get_random_video_frame(dataset: str, model: str):
         selected_features = (selected_features * c.BASE_MULTIPLIER).int()
 
     db_time = get_time_stamps(
-        db_time, list(range(random_id, random_id + 1)), selected_ids, dataset
+        db_time, list(range(random_id, random_id + 1)), ids, dataset
     )
 
     # Combine the selected IDs and features into a list of tuples
