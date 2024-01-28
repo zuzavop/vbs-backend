@@ -64,7 +64,7 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                             print(f'Could not load {id}')
 
                 print(f'Found: {len(time_stamps)}, Ids: {len(data.IDS)}')
-                time_stamp_storage = f'{internal_storage[-4]}_time.pkl'
+                time_stamp_storage = f'{internal_storage[:-4]}_time.pkl'
                 data.TIME = time_stamp_storage
                 with open(internal_storage, 'wb') as f:
                     dill.dump(data, f)
