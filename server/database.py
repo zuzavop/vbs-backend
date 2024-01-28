@@ -71,7 +71,7 @@ def get_time(new_data=None):
             if DATA.TIME not in TIME_COLLECTIONS:
                 TIME_COLLECTIONS[DATA.TIME] = np.array(tmp_data)
         return TIME_COLLECTIONS[DATA.TIME]
-    elif new_data is not None and hasattr(data, 'TIME'):
+    elif new_data is not None and hasattr(new_data, 'TIME'):
         if new_data.TIME not in TIME_COLLECTIONS:
             l.logger.info(new_data.TIME)
             with open(new_data.TIME, 'rb') as f:
