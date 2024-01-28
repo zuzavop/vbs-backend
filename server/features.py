@@ -18,7 +18,7 @@ def fallback_time_stamps(ids, dataset):
     for id in ids:
         id = id.decode('utf-8')
         _, frame_id = id.split(db.name_splitter(dataset), 1)
-        time_stamps.append([id, frame_id / 30 * 1000])
+        time_stamps.append([id, float(frame_id) / 30 * 1000])
     return time_stamps
 
 
