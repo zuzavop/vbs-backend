@@ -24,6 +24,7 @@ def fallback_time_stamps(ids, dataset):
 
 def get_time_stamps(db_time, ids, dataset):
     db_time = np.array(db_time)
+    l.logger.info(db_time)
     if len(db_time) < 1:
         db_time = fallback_time_stamps(ids, dataset)
     else:
