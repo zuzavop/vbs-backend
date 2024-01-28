@@ -58,8 +58,8 @@ def get_labels():
     return DATA.LABELS
 
 
-def get_time():
-    if hasattr(DATA, 'TIME'):
+def get_time(data=None):
+    if data is None and hasattr(DATA, 'TIME'):
         if isinstance(DATA.TIME, str):
             with open(DATA.TIME, 'rb') as f:
                 tmp_data = dill.load(f)
@@ -150,6 +150,7 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
             # read data and ids from hard drive
             with open(cur_file, 'rb') as f:
                 DATA_COLLECTIONS[data_collection_name] = dill.load(f)
+                get_time(DATA_COLLECTIONS[data_collection_name])
 
         if cur_dataset == dataset and cur_model == model:
             file_path = cur_file

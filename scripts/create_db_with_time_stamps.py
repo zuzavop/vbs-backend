@@ -31,7 +31,11 @@ class memory_data_storage:
 
 def extend_db_with_time_stamps(db_dir, msb_dir):
     # Get all database files and all msb files
-    pkl_files = [file for file in os.listdir(db_dir) if file.endswith('.pkl')]
+    pkl_files = [
+        file
+        for file in os.listdir(db_dir)
+        if file.endswith('.pkl') and 'db_time' not in file
+    ]
     msb_files = [file for file in os.listdir(msb_dir) if file.endswith('.tsv')]
 
     # Loop through all the database files and check if the time stamps are there
