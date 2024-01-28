@@ -85,8 +85,8 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                                     selected_time_stamps['endtime'].item() * 1000,
                                 ]
                             )
-                        except:
-                            print(f'Could not load {id}')
+                        except Exception as e:
+                            print(f'Could not load {id} with {e}')
 
                 print(f'Found: {len(time_stamps)}, Ids: {len(ids)}')
                 data.TIME = time_stamp_storage
