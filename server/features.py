@@ -68,7 +68,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
-    db_time = get_time_stamps(db_time, ids, dataset)
+    db_time = get_time_stamps(db_time, ids[sorted_indices], dataset)
     l.logger.info(f'{db_time}')
 
     # Give only back the k most similar embeddings
@@ -122,7 +122,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
-    db_time = get_time_stamps(db_time, ids, dataset)
+    db_time = get_time_stamps(db_time, ids[sorted_indices], dataset)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -177,7 +177,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
-    db_time = get_time_stamps(db_time, ids, dataset)
+    db_time = get_time_stamps(db_time, ids[sorted_indices], dataset)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
