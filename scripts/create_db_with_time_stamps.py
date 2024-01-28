@@ -78,6 +78,12 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                             selected_time_stamps = df[
                                 df['id_visione'] == float(frame_id)
                             ]
+                            if selected_time_stamps.empty:
+                                selected_time_stamps = df[
+                                    df['id_visione'] == int(frame_id)
+                                ]
+                            if selected_time_stamps.empty:
+                                selected_time_stamps = df[df['id_visione'] == frame_id]
                             print(selected_time_stamps)
                             time_stamps.append(
                                 [
