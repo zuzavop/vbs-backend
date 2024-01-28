@@ -59,11 +59,11 @@ def get_labels():
     return DATA.LABELS
 
 
-def get_time(data=None):
+def get_time(new_data=None):
     global DATA
     global TIME_COLLECTIONS
 
-    if data is None and hasattr(DATA, 'TIME'):
+    if new_data is None and hasattr(DATA, 'TIME'):
         l.logger.info(DATA.TIME)
         if DATA.TIME not in TIME_COLLECTIONS:
             with open(DATA.TIME, 'rb') as f:
@@ -71,11 +71,12 @@ def get_time(data=None):
             if DATA.TIME not in TIME_COLLECTIONS:
                 TIME_COLLECTIONS[DATA.TIME] = np.array(tmp_data)
         return TIME_COLLECTIONS[DATA.TIME]
-    elif data is not None and hasattr(data, 'TIME'):
-        if data.TIME not in TIME_COLLECTIONS:
-            with open(data.TIME, 'rb') as f:
+    elif new_data is not None and hasattr(data, 'TIME'):
+        if new_data.TIME not in TIME_COLLECTIONS:
+            l.logger.info(new_data.TIME)
+            with open(new_data.TIME, 'rb') as f:
                 tmp_data = dill.load(f)
-            TIME_COLLECTIONS[data.TIME] = np.array(tmp_data)
+            TIME_COLLECTIONS[new_data.TIME] = np.array(tmp_data)
     else:
         return np.array([])
 
