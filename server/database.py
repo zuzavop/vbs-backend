@@ -65,13 +65,17 @@ def get_time(data=None):
 
     if data is None and hasattr(DATA, 'TIME'):
         l.logger.info(DATA.TIME)
-        if isinstance(DATA.TIME, str):
+        if DATA.TIME not in TIME_COLLECTIONS:
             with open(DATA.TIME, 'rb') as f:
                 tmp_data = dill.load(f)
-            if not DATA.TIME in TIME_COLLECTIONS:
-                TIME_COLLECTIONS[DATA.TIME] = tmp_data
-            DATA.TIME = tmp_data
-        return DATA.TIME
+            if DATA.TIME not in TIME_COLLECTIONS:
+                TIME_COLLECTIONS[DATA.TIME] = np.array(tmp_data)
+        return TIME_COLLECTIONS[DATA.TIME]
+    elif data is not None and hasattr(data, 'TIME'):
+        if data.TIME not in TIME_COLLECTIONS:
+            with open(data.TIME, 'rb') as f:
+                tmp_data = dill.load(f)
+            TIME_COLLECTIONS[data.TIME] = np.array(tmp_data)
     else:
         return np.array([])
 
