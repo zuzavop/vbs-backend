@@ -21,6 +21,7 @@ max_depth = 2
 
 DATA = None
 DATA_COLLECTIONS = {}
+TIME_COLLECTIONS = {}
 CUR_SELECTION = None
 
 
@@ -59,6 +60,8 @@ def get_labels():
 
 
 def get_time(data=None):
+    global DATA
+
     if data is None and hasattr(DATA, 'TIME'):
         if isinstance(DATA.TIME, str):
             with open(DATA.TIME, 'rb') as f:
