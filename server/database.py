@@ -61,11 +61,15 @@ def get_labels():
 
 def get_time(data=None):
     global DATA
+    global TIME_COLLECTIONS
 
     if data is None and hasattr(DATA, 'TIME'):
+        l.logger.info(DATA.TIME)
         if isinstance(DATA.TIME, str):
             with open(DATA.TIME, 'rb') as f:
                 tmp_data = dill.load(f)
+            if not DATA.TIME in TIME_COLLECTIONS:
+                TIME_COLLECTIONS[DATA.TIME] = tmp_data
             DATA.TIME = tmp_data
         return DATA.TIME
     else:
