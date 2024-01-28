@@ -80,9 +80,9 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                             time_stamps.append(
                                 [
                                     id,
-                                    selected_time_stamps['middletime'] * 1000,
-                                    selected_time_stamps['starttime'] * 1000,
-                                    selected_time_stamps['endtime'] * 1000,
+                                    selected_time_stamps['middletime'].item() * 1000,
+                                    selected_time_stamps['starttime'].item() * 1000,
+                                    selected_time_stamps['endtime'].item() * 1000,
                                 ]
                             )
                         except:
