@@ -13,6 +13,24 @@ import logger as l
 import models as m
 
 
+def fallback_time_stamps(ids, dataset):
+    time_stamps = []
+    for id in ids:
+        id = id.decode('utf-8')
+        _, frame_id = id.split(db.name_splitter(dataset), 1)
+        time_stamps.append([id, frame_id / 30 * 1000])
+    return time_stamps
+
+
+def get_time_stamps(db_time, ids, dataset):
+    db_time = np.array(db_time)
+    if len(db_time) < 1:
+        db_time = fallback_time_stamps(ids, dataset)
+    else:
+        db_time *= 1000
+    return db_time
+
+
 def get_cosine_ranking(query_vector, matrix):
     # Get the dot product for every entry
     dot_product = torch.matmul(query_vector, matrix.T)
@@ -49,8 +67,8 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
+    db_time = get_time_stamps(db_time, ids, dataset)
     l.logger.info(f'{db_time}')
-    db_time = np.array(db_time)[sorted_indices].tolist()
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -60,7 +78,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
             similarities[sorted_indices].tolist(),
             selected_data.tolist(),
             labels[sorted_indices].tolist(),
-            db_time,
+            db_time[sorted_indices].tolist(),
         )
     )
 
@@ -103,7 +121,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
-    db_time = np.array(db_time)[sorted_indices].tolist()
+    db_time = get_time_stamps(db_time, ids, dataset)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -113,7 +131,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
             similarities[sorted_indices].tolist(),
             selected_data.tolist(),
             labels[sorted_indices].tolist(),
-            db_time,
+            db_time[sorted_indices].tolist(),
         )
     )
 
@@ -158,7 +176,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
-    db_time = np.array(db_time)[sorted_indices].tolist()
+    db_time = get_time_stamps(db_time, ids, dataset)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
@@ -168,7 +186,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
             similarities[sorted_indices].tolist(),
             selected_data.tolist(),
             labels[sorted_indices].tolist(),
-            db_time,
+            db_time[sorted_indices].tolist(),
         )
     )
 
@@ -239,7 +257,7 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         sliced_features = (sliced_features * c.BASE_MULTIPLIER).int()
 
-    db_time = np.array(db_time)[start_idx:end_idx].tolist()
+    db_time = get_time_stamps(db_time[start_idx:end_idx], sliced_ids, dataset)
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
@@ -247,7 +265,7 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
             sliced_ids.tolist(),
             sliced_features.tolist(),
             sliced_labels.tolist(),
-            db_time,
+            db_time.tolist(),
         )
     )
 
@@ -288,7 +306,7 @@ def get_random_video_frame(dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_features = (selected_features * c.BASE_MULTIPLIER).int()
 
-    db_time = np.array(db_time)[random_id : random_id + 1].tolist()
+    db_time = get_time_stamps(db_time[random_id : random_id + 1], selected_ids, dataset)
 
     # Combine the selected IDs and features into a list of tuples
     video_images = list(
@@ -296,7 +314,7 @@ def get_random_video_frame(dataset: str, model: str):
             selected_ids.tolist(),
             selected_features.tolist(),
             selected_labels.tolist(),
-            db_time,
+            db_time.tolist(),
         )
     )
 

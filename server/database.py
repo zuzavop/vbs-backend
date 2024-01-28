@@ -60,6 +60,10 @@ def get_labels():
 
 def get_time():
     if hasattr(DATA, 'TIME'):
+        if isinstance(DATA.TIME, str):
+            with open(DATA.TIME, 'rb') as f:
+                tmp_data = dill.load(f)
+            DATA.TIME = tmp_data
         return DATA.TIME
     else:
         return []
