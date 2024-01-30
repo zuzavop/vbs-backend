@@ -3,8 +3,8 @@
 <!-- ![Your Project Logo](logo.png)  If applicable -->
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/yourusername/your-repo-name.svg)](https://github.com/yourusername/your-repo-name/stargazers)
-[![GitHub Issues](https://img.shields.io/github/issues/yourusername/your-repo-name.svg)](https://github.com/yourusername/your-repo-name/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/merowech/vbs-backend.svg)](https://github.com/merowech/vbs-backend/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/merowech/vbs-backend.svg)](https://github.com/merowech/vbs-backend/issues)
 
 ## Overview
 
