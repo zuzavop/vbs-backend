@@ -14,22 +14,39 @@ import models as m
 
 
 def fallback_time_stamps(ids, dataset):
+    # Initialize an empty list to store time stamps
     time_stamps = []
+
+    # Iterate through each ID in the given list
     for id in ids:
+        # Convert the ID from bytes to string using UTF-8 encoding
         id = id.decode('utf-8')
+
+        # Split the ID into two parts using a custom function (db.name_splitter) and get the second part
         _, frame_id = id.split(db.name_splitter(dataset), 1)
+
+        # Calculate the middle time based on the frame ID, assuming a frame rate of 30 frames per second
         middle_time = float(frame_id) / 30 * 1000
+
+        # Create a list containing the ID, middle time, and a time range around the middle time
         time_stamps.append(
             [id, middle_time, max(0, middle_time - 1000), middle_time + 1000]
         )
+
+    # Convert the list of time stamps to a NumPy array and return it
     return np.array(time_stamps)
 
 
 def get_time_stamps(db_time, slicing, ids, dataset):
+    # Check if the given db_time is empty
     if len(db_time) < 1:
+        # If empty, use the fallback_time_stamps function to generate time stamps for the specified IDs and dataset
         db_time = fallback_time_stamps(ids[slicing], dataset)
     else:
+        # If not empty, slice the db_time array based on the provided slicing parameter
         db_time = db_time[slicing]
+
+    # Return the resulting db_time array (either from the fallback or sliced original)
     return db_time
 
 
@@ -69,6 +86,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
+    # Get the time stamps for the sliced IDs
     db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
 
     # Give only back the k most similar embeddings
@@ -89,11 +107,11 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     del data
     del ids
     del labels
+    del db_time
     del similarities
     del sorted_indices
-    del db_time
 
-    # Return a list of (ID, rank, score, feature, label) tuples
+    # Return a list of (ID, rank, score, feature, label, time) tuples
     return most_similar_samples
 
 
@@ -122,6 +140,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
+    # Get the time stamps for the sliced IDs
     db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
 
     # Give only back the k most similar embeddings
@@ -142,11 +161,11 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     del data
     del ids
     del labels
+    del db_time
     del similarities
     del sorted_indices
-    del db_time
 
-    # Return a list of (ID, rank, score, feature, label) tuples
+    # Return a list of (ID, rank, score, feature, label, time) tuples
     return most_similar_samples
 
 
@@ -177,6 +196,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
+    # Get the time stamps for the sliced IDs
     db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
 
     # Give only back the k most similar embeddings
@@ -197,11 +217,11 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
     del data
     del ids
     del labels
+    del db_time
     del similarities
     del sorted_indices
-    del db_time
 
-    # Return a list of (ID, rank, score, feature, label) tuples
+    # Return a list of (ID, rank, score, feature, label, time) tuples
     return most_similar_samples
 
 
@@ -258,6 +278,7 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         sliced_features = (sliced_features * c.BASE_MULTIPLIER).int()
 
+    # Get the time stamps for the sliced IDs
     db_time = get_time_stamps(db_time, list(range(start_idx, end_idx)), ids, dataset)
 
     # Combine the selected IDs and features into a list of tuples
@@ -273,12 +294,12 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     del data
     del ids
     del labels
+    del db_time
     del sliced_ids
     del sliced_features
     del sliced_labels
-    del db_time
 
-    # Return a list of (ID, feature, label) tuples
+    # Return a list of (ID, feature, label, time) tuples
     return video_images
 
 
@@ -307,6 +328,7 @@ def get_random_video_frame(dataset: str, model: str):
     if c.BASE_MULTIPLICATION:
         selected_features = (selected_features * c.BASE_MULTIPLIER).int()
 
+    # Get the time stamps for the sliced IDs
     db_time = get_time_stamps(
         db_time, list(range(random_id, random_id + 1)), ids, dataset
     )
@@ -324,10 +346,10 @@ def get_random_video_frame(dataset: str, model: str):
     del data
     del ids
     del labels
+    del db_time
     del selected_ids
     del selected_features
     del selected_labels
-    del db_time
 
-    # Return a list of (ID, feature, label) tuples
+    # Return a list of (ID, feature, label, time) tuples
     return video_images
