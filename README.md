@@ -91,7 +91,7 @@ docker-compose up --build
 ## API Documentation
 
 In general, there are several default parameters available for every query:  
-Defaults: `{"k": 1000, "dataset": "V3C", "model": "clip-laion", "add_features": 0, "max_labels": 10, "speed_up": 1}`  
+Defaults: `{"k": 1000, "dataset": "V3C", "model": "clip-laion", "max_labels": 10, "add_features": 0, "speed_up": 1}`  
 `"add_features"` adds features to the returning json depending on the `"dataset"` and `"model"`.  
 `"speed_up"` enables a download of the json file which speeds up the whole process.  
 
@@ -126,7 +126,8 @@ See `tests\test_textQuery.sh` for an example.
     "score": 0.95,
     "id": ["video_id", "frame_id"],
     "features": [0.1, 0.2, 0.3],
-    "label": [5, 10, 2, 3, 1]
+    "label": [5, 10, 2, 3, 1],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
   },
   {
     "uri": "another_image_uri",
@@ -134,7 +135,8 @@ See `tests\test_textQuery.sh` for an example.
     "score": 0.92,
     "id": ["video_id", "frame_id"],
     "features": [0.2, 0.3, 0.4],
-    "label": [7, 4, 3, 9, 10]
+    "label": [7, 4, 3, 9, 10],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
   }
 ]
 ```
@@ -160,7 +162,8 @@ See `tests\test_imageQuery.sh` for an example.
     "score": 0.95,
     "id": ["video_id", "frame_id"],
     "features": [0.1, 0.2, 0.3],
-    "label": [5, 10, 2, 3, 1]
+    "label": [5, 10, 2, 3, 1],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
   },
   {
     "uri": "another_image_uri",
@@ -168,7 +171,8 @@ See `tests\test_imageQuery.sh` for an example.
     "score": 0.92,
     "id": ["video_id", "frame_id"],
     "features": [0.2, 0.3, 0.4],
-    "label": [7, 4, 3, 9, 10]
+    "label": [7, 4, 3, 9, 10],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
   }
 ]
 ```
@@ -208,6 +212,8 @@ cd tests
 Ensure that you have set up any necessary test data or configurations before running the tests.
 
 ## Possible Datasets
+
+Currently supported datasets for the VBS challenge:
 
  - V3C (https://zenodo.org/records/8188570)
  - MVK (https://zenodo.org/records/8355037)
