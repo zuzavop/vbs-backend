@@ -4,6 +4,9 @@ FROM python:3.10-slim
 # Set the working directory in the container
 WORKDIR /preprocess
 
+# Add ffmpeg
+RUN apt update && apt install ffmpeg
+
 # Copy the requirements file into the container at /preprocess
 COPY ./requirements.txt /preprocess/
 

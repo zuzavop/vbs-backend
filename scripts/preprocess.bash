@@ -72,6 +72,13 @@ if [ -d "$directory_path" ]; then
           python create_db_with_time_stamps.py --db-dir "$subdirectory" --msb-dir "$dir_with_msb"
       fi
 
+      # Extract keyframes if videos and msb directories are present
+      if [[ -d "videos" && -d "msb" ]]; then
+          mkdir -p "keyframes"
+          python extract_keyframes_if_msb_and_videos_present.py -v "./videos/" -m "./msb/" -kf "./keyframes/"
+          python keyframes_renamer_to_match_features.py -d "./keyframes/"
+      fi
+
     fi
   done
 else
