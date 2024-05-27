@@ -253,6 +253,37 @@ async def text_query(query_params: dict):
         return attachment_response_creator(ret_dict)
     else:
         return json_response_creator(ret_dict)
+
+
+@app.post('/filter/')
+async def filter(query_params: dict):
+    '''
+    Get a list of images based on a filter.
+    '''
+    start_time = time.time()
+    l.logger.info(query_params)
+    
+    filter = query_params.get('filter', '')
+    filter_type = query_params.get('filter_type', 'tag')
+    k = min(query_params.get('k', c.BASE_K), 10000)
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    
+    # Call the function to retrieve images
+    images = fs.filter_metadata(filter, filter_type, k, dataset)
+    
+    # Create return dictionary
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
+    
+    execution_time = time.time() - start_time
+    l.logger.info(f'/filter: {execution_time:.6f} secs')
+    
+    if download_speed_up:
+        return attachment_response_creator(ret_dict)
+    else:
+        return json_response_creator(ret_dict)
     
 
 # Define the 'getVideoFrames' route

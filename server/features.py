@@ -440,7 +440,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
     return most_similar_samples
 
 
-def filter_metadata(query: str, metadata_type: str, dataset: str):
+def filter_metadata(query: str, metadata_type: str, k: int, dataset: str):
     # Load metadata from the database
     db.load_metadata(dataset)
     metadata = db.get_metadata()
