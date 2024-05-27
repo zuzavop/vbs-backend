@@ -222,6 +222,39 @@ async def image_query_by_id(query_params: dict):
         return json_response_creator(ret_dict)
 
 
+# Define the 'temporalQuery' route
+@app.post('/temporalQuery/')
+async def text_query(query_params: dict):
+    '''
+    Get a list of images based on a temporal query.
+    '''
+    start_time = time.time()
+    l.logger.info(query_params)
+
+    query = query_params.get('query', '')
+    k = min(query_params.get('k', c.BASE_K), 10000)
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    model = query_params.get('model', c.BASE_MODEL)
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    is_life_logging = bool(query_params.get('life_log', c.BASE_LIFE_LOG))
+
+    # Call the function to retrieve images
+    images = fs.get_images_by_text_query(query, k, dataset, model, is_life_logging)
+
+    # Create return dictionary
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/temporalQuery: {execution_time:.6f} secs')
+
+    if download_speed_up:
+        return attachment_response_creator(ret_dict)
+    else:
+        return json_response_creator(ret_dict)
+    
+
 # Define the 'getVideoFrames' route
 @app.post('/getVideoFrames/')
 async def get_video_frames(query_params: dict):
@@ -260,21 +293,43 @@ async def get_video_frames(query_params: dict):
 
 # Define the 'getVideo' route
 @app.get('/getVideo')
-async def get_video(video_id: str):
+async def get_video(query_params: dict):
     '''
     Get URI of video.
     '''
     start_time = time.time()
     l.logger.info(f'Get video {video_id}')
+    
+    video_id = query_params.get('video_id', '')
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
 
     # Call the function to retrieve video images
-    video_image = fs.get_video_image_by_id(video_id, frame_id)
+    video = fs.get_video_by_id(video_id, dataset)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/getVideo: {execution_time:.6f} secs')
 
-    return {'video_id': video_id, 'frame_id': frame_id, 'video_image': video_image}
+    return {'video_id': video_id, 'video': video}
 
+
+@app.get('/getFiltres/')
+async def get_filtres(query_params: dict):
+    '''
+    Get a list of filters.
+    '''
+    start_time = time.time()
+    l.logger.info(query_params)
+    
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    
+    # Call the function to retrieve filters
+    filters = fs.get_filters(dataset)
+    
+    execution_time = time.time() - start_time
+    l.logger.info(f'/getFiltres: {execution_time:.6f} secs')
+    
+    return {'filters': filters}
+    
 
 # Define the 'getRandomFrame' route
 @app.get('/getRandomFrame/')
@@ -321,3 +376,6 @@ if __name__ == '__main__':
     import uvicorn
 
     uvicorn.run(app, host='0.0.0.0', port=8000, reload=True)
+    
+    
+

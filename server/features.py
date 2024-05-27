@@ -353,3 +353,118 @@ def get_random_video_frame(dataset: str, model: str):
 
     # Return a list of (ID, feature, label, time) tuples
     return video_images
+
+
+def get_video_by_id(video_id: str, dataset: str):
+    # TODO
+    print(video_id, dataset)
+    return None
+
+
+def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, is_life_log: bool):
+    start_time = time.time()
+    
+    queries = query.split("<")
+    separator = db.name_splitter(dataset)
+
+    # Tokenize query input and encode the data using the selected model
+    text_features = [m.embed_text(q, model) for q in queries]
+
+    # Normalize vector to make it smaller and for cosine calculcation
+    text_features = [text_feature / text_feature.norm(dim=-1, keepdim=True) for text_feature in text_features]
+
+    # Load data
+    db.load_features(dataset, model)
+    data = db.get_data()
+    ids = db.get_ids()
+    labels = db.get_labels()
+    db_time = db.get_time()
+        
+    if is_life_log: 
+        print() #TODO
+    else: # Temporal query where all queries should be in the same order TODO
+        sequences = []
+        for i, text_f in enumerate(text_features):
+            _, sim = get_cosine_ranking(text_f, data)
+            if i == 0:
+                # For the first action, start new sequences
+                sequences = [[(id, s)] for id, s in enumerate(sim)]
+            else:
+                # For subsequent actions, extend existing sequences
+                new_sequences = []
+                for seq in sequences:
+                    for id, s in enumerate(sim):
+                        if id > seq[-1][0]  and ids[id].rpartition(separator)[0] == ids[seq[-1][0]].rpartition(separator)[0]:
+                            new_seq = seq + [(id, s)]
+                            new_sequences.append(new_seq)
+                        elif ids[id].rpartition(separator)[0] != ids[seq[-1][0]].rpartition(separator)[0]:
+                            break
+                sequences = new_sequences
+        
+         # Sort the sequences by their total similarity score
+        sequences.sort(key=lambda seq: -sum(s for _, s in seq))
+        
+    sorted_indices = sorted_indices[:k]
+
+    # If settings multiply and change to integer
+    selected_data = data[sorted_indices]
+    if c.BASE_MULTIPLICATION:
+        selected_data = (selected_data * c.BASE_MULTIPLIER).int()
+
+    # Get the time stamps for the sliced IDs
+    db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
+
+    # Give only back the k most similar embeddings
+    most_similar_samples = list(
+        zip(
+            ids[sorted_indices].tolist(),
+            [i for i in range(len(sorted_indices))],
+            similarities[sorted_indices].tolist(),
+            selected_data.tolist(),
+            labels[sorted_indices].tolist(),
+            db_time.tolist(),
+        )
+    )
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
+
+    del data
+    del ids
+    del labels
+    del db_time
+    del similarities
+    del sorted_indices
+
+    # Return a list of (ID, rank, score, feature, label, time) tuples
+    return most_similar_samples
+
+
+def filter_metadata(query: str, metadata_type: str, dataset: str):
+    # Load metadata from the database
+    db.load_metadata(dataset)
+    metadata = db.get_metadata()
+    ids = db.get_ids()
+
+    # Get the IDs of the matching metadata
+    matching_ids = ids[metadata[metadata_type] == query]
+
+    # Return the list of matching IDs
+    return matching_ids.tolist()
+
+
+def get_filters(dataset: str):
+    # Load metadata from the database
+    db.load_metadata(dataset)
+    metadata = db.get_metadata()
+
+    # Get the unique values for each metadata type
+    unique_values = {
+        'action': metadata['action'].unique().tolist(),
+        'object': metadata['object'].unique().tolist(),
+        'location': metadata['location'].unique().tolist(),
+        'time': metadata['time'].unique().tolist(),
+    }
+
+    # Return the dictionary of unique metadata values
+    return unique_values
