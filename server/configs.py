@@ -4,8 +4,8 @@
 DATABASE_ROOT = '/data/vbs/'
 DATABASE_IMAGES = '/data/vbs/images/'
 
-BASE_MODEL = 'clip-laion'
-BASE_DATASET = 'V3C'
+BASE_MODEL = 'clip-vit-webli'
+BASE_DATASET = 'LSC'
 
 BASE_K = 1000
 BASE_ADD_FEATURES = 0

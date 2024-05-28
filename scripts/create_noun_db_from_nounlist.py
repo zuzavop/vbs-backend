@@ -101,7 +101,7 @@ def load_clip_vit_webli(path):
             print(f'Process noun list: {file_name}')
 
             # Load model and tokenizer via open clip
-            model, _, preprocess = open_clip.create_model_from_pretrained(
+            model, preprocess = open_clip.create_model_from_pretrained(
                 'hf-hub:timm/ViT-L-16-SigLIP-384'
             )
             tokenizer = open_clip.get_tokenizer(
