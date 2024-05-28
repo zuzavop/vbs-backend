@@ -5,7 +5,7 @@ directory_path="/data/vbs"
 echo "Data directory: $directory_path"
 
 # Define an array
-my_array=("clip-laion", "clip-vit-webli", "clip-openai") # "clip-laion" "clip-openai" "aladin"
+my_array=("clip-laion", "clip-vit-webli") # "clip-laion" "clip-openai" "aladin"
 
 
 # Check if the directory exists
