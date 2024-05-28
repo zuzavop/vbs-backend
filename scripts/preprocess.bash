@@ -5,7 +5,7 @@ directory_path="/data/vbs"
 echo "Data directory: $directory_path"
 
 # Define an array
-my_array=("clip-laion", "clip-vit-webli") # "clip-laion" "clip-openai" "aladin"
+my_array=("clip-laion" "clip-vit-webli") # "clip-laion" "clip-openai" "aladin"
 
 
 # Check if the directory exists
@@ -28,6 +28,7 @@ if [ -d "$directory_path" ]; then
 
           # Check if any of the array elements exist in the file
           for element in "${my_array[@]}"; do
+            echo "Checking if $(basename "$file") contains $element"
             if [[ $(basename "$file") == *"$element"* ]]; then
               echo "Found $element in $file"
               python create_noun_db_from_nounlist.py --base-dir "$subdirectory" --model-name "$element"

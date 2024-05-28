@@ -74,7 +74,6 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     db.load_features(dataset, model)
     data = db.get_data()
     ids = db.get_ids()
-    l.logger.info(f'IDs: {ids}')
     labels = db.get_labels()
     db_time = db.get_time()
 
