@@ -89,6 +89,36 @@ def load_open_clip(path):
             print(f'Noun list processed: {file_name}')
         else:
             print(f'Noun list already processed: {file_name}')
+            
+            
+def load_clip_vit_webli(path):
+    noun_lists = load_noun_lists(path)
+    for noun_list in noun_lists:
+        file_name, noun_list = noun_list
+        result_path = os.path.join(path, f'{file_name[:-4]}-clip-vit-webli.ptt')
+
+        if not os.path.exists(result_path):
+            print(f'Process noun list: {file_name}')
+
+            # Load model and tokenizer via open clip
+            model, _, preprocess = open_clip.create_model_from_pretrained(
+                'hf-hub:timm/ViT-L-16-SigLIP-384'
+            )
+            tokenizer = open_clip.get_tokenizer(
+                'hf-hub:timm/ViT-L-16-SigLIP-384'
+            )
+
+            tokenized_noun_list = [tokenizer(f'a photo of {n}') for n in noun_list]
+            cat_tokenized_noun_list = torch.cat(tokenized_noun_list)
+            with torch.no_grad():
+                embedded_noun_list = model.encode_text(cat_tokenized_noun_list)
+            norm_embedded_noun_list = normalize(embedded_noun_list)
+
+            torch.save(norm_embedded_noun_list, result_path)
+
+            print(f'Noun list processed: {file_name}')
+        else:
+            print(f'Noun list already processed: {file_name}')
 
 
 if __name__ == '__main__':
@@ -112,3 +142,5 @@ if __name__ == '__main__':
         load_laion(base_data_dir)
     if 'clip-openai' in model_name:
         load_open_clip(base_data_dir)
+    if 'clip-vit-webli' in model_name:
+        load_clip_vit_webli(base_data_dir)

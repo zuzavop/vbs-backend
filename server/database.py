@@ -93,7 +93,7 @@ def name_splitter(dataset):
 
 
 def uri_spliter(id, dataset):
-    if dataset in ['V3C', 'VBSLHE', 'LSC']:
+    if dataset in ['V3C', 'VBSLHE']:
         return id.split('_', 1)
     else:
         return id.rsplit('_', 1)
