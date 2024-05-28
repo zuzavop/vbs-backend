@@ -130,9 +130,9 @@ def load_vit_webli():
         cur_model = (model, tokenizer, preprocess)
 
     else:
-        model, processor = cur_model
+        model, tokenizer, preprocess = cur_model
 
-    return model, processor
+    return model, tokenizer, preprocess
 
 
 # Embed text using webli
