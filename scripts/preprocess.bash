@@ -28,7 +28,6 @@ if [ -d "$directory_path" ]; then
 
           # Check if any of the array elements exist in the file
           for element in "${my_array[@]}"; do
-            echo "Checking if $(basename "$file") contains $element"
             if [[ $(basename "$file") == *"$element"* ]]; then
               echo "Found $element in $file"
               python create_noun_db_from_nounlist.py --base-dir "$subdirectory" --model-name "$element"

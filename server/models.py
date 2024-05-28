@@ -136,7 +136,7 @@ def load_vit_webli():
 
 
 # Embed text using webli
-def embed_text_vit_webli(text):
+def embed_text_webli(text):
     model, tokenizer, _ = load_vit_webli()
 
     query_tokens = tokenizer(text)
@@ -146,14 +146,13 @@ def embed_text_vit_webli(text):
 
 
 # Embed image using webli
-def embed_image_vit_webli(image):
+def embed_image_webli(image):
     model, _, preprocess = load_vit_webli()
 
     query_image = preprocess(image).unsqueeze(0)
     image_features = model.encode_image(query_image).detach().cpu().flatten()
 
     return image_features
-
 
 
 def embed_text(text, model):
@@ -164,12 +163,12 @@ def embed_text(text, model):
     # Check if the specified model is 'clip-laion'
     if 'clip-laion' in model:
         return embed_text_laion(text)
+    elif 'clip-vit-webli' in model:
+        return embed_image_webli(text)
     # If the model is 'clip-openai', call the function for OpenAI's CLIP model
     elif 'clip-openai' in model:
         return embed_text_open_clip(text)
-    elif 'clip-vit-webli' in model:
-        return embed_text_vit_webli(text)
-
+    
 
 def embed_image(image, model):
     # Check if model is available
@@ -179,11 +178,12 @@ def embed_image(image, model):
     # Check if the specified model is 'clip-laion'
     if 'clip-laion' in model:
         return embed_image_laion(image)
+    elif 'clip-vit-webli' in model:
+        return embed_image_webli(image)
     # If the model is 'clip-openai', call the function for OpenAI's CLIP model
     elif 'clip-openai' in model:
         return embed_image_open_clip(image)
-    elif 'clip-vit-webli' in model:
-        return embed_image_vit_webli(image)
+    
 
 
 l.logger.info('Start to load pre-trained models')
