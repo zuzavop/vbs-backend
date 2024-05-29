@@ -130,10 +130,10 @@ def extend_db_with_metadata(db_dir, metadata_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Script to extend all pickled databases with metadata')
     parser.add_argument('--db_dir', type=str, help='Directory containing the database files')
-    parser.add_argument('--metadata', type=str, help='Path to the metadata file')
+    parser.add_argument('--metadata_file', type=str, help='Path to the metadata file')
     args = parser.parse_args()
     
     db_dir = os.path.join(args.db_dir, 'processed')
-    metadata = args.metadata
+    metadata = args.metadata_file
 
     extend_db_with_metadata(db_dir, metadata)

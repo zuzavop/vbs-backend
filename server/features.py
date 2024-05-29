@@ -364,7 +364,7 @@ def get_video_by_id(video_id: str, dataset: str):
 def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, is_life_log: bool):
     start_time = time.time()
     
-    queries = query.split("<")
+    queries = query.split(">")
     separator = db.name_splitter(dataset)
 
     # Tokenize query input and encode the data using the selected model
@@ -394,7 +394,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
                 new_sequences = []
                 for seq in sequences:
                     for id, s in enumerate(sim):
-                        if id > seq[-1][0]  and ids[id].rpartition(separator)[0] == ids[seq[-1][0]].rpartition(separator)[0]:
+                        if id > seq[-1][0]  and ids[id].split(separator)[0] == ids[seq[-1][0]].rpartition(separator)[0]:
                             new_seq = seq + [(id, s)]
                             new_sequences.append(new_seq)
                         elif ids[id].rpartition(separator)[0] != ids[seq[-1][0]].rpartition(separator)[0]:
@@ -404,7 +404,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
          # Sort the sequences by their total similarity score
         sequences.sort(key=lambda seq: -sum(s for _, s in seq))
         
-    sorted_indices = sorted_indices[:k]
+    sorted_indices = sequences[:k]
 
     # If settings multiply and change to integer
     selected_data = data[sorted_indices]
