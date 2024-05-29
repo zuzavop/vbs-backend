@@ -82,7 +82,7 @@ if [ -d "$directory_path" ]; then
       metadata_file=$(find "$subdirectory" -type f -name "*metadata.csv")
       if [ -n "$metadata_file" ]; then
           echo "Found metadata file: $metadata_file"
-          python create_db_from_metadata.py --db-dir "$subdirectory" --metadata_file "$metadata_file"
+          python create_db_from_metadata.py --db_dir "$subdirectory" --metadata_file "$metadata_file"
       fi
 
     fi
