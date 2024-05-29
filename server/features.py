@@ -445,6 +445,8 @@ def filter_metadata(query: str, metadata_type: str, k: int, dataset: str):
     db.load_metadata(dataset)
     metadata = db.get_metadata()
     
+    l.logger.info(metadata.head())
+    
     # Filter the metadata based on the query and metadata type
     filtered_metadata = metadata[metadata[metadata_type].str.contains(query, case=False)][:k]
     

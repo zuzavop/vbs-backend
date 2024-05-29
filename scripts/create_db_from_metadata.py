@@ -14,6 +14,8 @@ import pandas as pd
 
 from tqdm import tqdm
 
+from datetime import datetime
+
 
 # Class structure to store data, indices, labels, and the time
 class memory_data_storage:
@@ -79,6 +81,8 @@ def extend_db_with_metadata(db_dir, metadata_path):
                     selected_metadata = metadata_file[
                         metadata_file['minute_id'] == minute_id
                     ]
+                    
+                    date = datetime(int(id[:4]), int(id[4:6]), int(id[6:8]))
 
                     # Append the extracted metadata to the list
                     metadata.append(
@@ -91,7 +95,10 @@ def extend_db_with_metadata(db_dir, metadata_path):
                             selected_metadata['local_time'].item(),
                             selected_metadata['latitude'].item(),
                             selected_metadata['longitude'].item(),
-                            id.split('_')[1][:4],
+                            selected_metadata['semantic_name'].item(),
+                            selected_metadata['time_zone'].item(),
+                            id.split('_')[1][:2],
+                            date.weekday(),
                         ]
                     )
 
