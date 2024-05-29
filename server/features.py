@@ -252,8 +252,8 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
         k = 1000
 
     # Extract a slice of 'k' elements centered around the found index
-    start_idx = idx - k
-    end_idx = idx + k + 1
+    start_idx = idx - int(k/2)
+    end_idx = idx + int(k/2) + 1
 
     # Get all video frames for the video
     if k == -1:
