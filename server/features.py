@@ -444,13 +444,12 @@ def filter_metadata(query: str, metadata_type: str, k: int, dataset: str):
     # Load metadata from the database
     db.load_metadata(dataset)
     metadata = db.get_metadata()
-    ids = db.get_ids()
-
-    # Get the IDs of the matching metadata
-    matching_ids = ids[metadata[metadata_type] == query]
-
-    # Return the list of matching IDs
-    return matching_ids.tolist()
+    
+    # Filter the metadata based on the query and metadata type
+    filtered_metadata = metadata[metadata[metadata_type].str.contains(query, case=False)][:k]
+    
+    # Return the filtered metadata as a list of dictionaries
+    return filtered_metadata.to_dict(orient='records')
 
 
 def get_filters(dataset: str):
@@ -458,13 +457,8 @@ def get_filters(dataset: str):
     db.load_metadata(dataset)
     metadata = db.get_metadata()
 
-    # Get the unique values for each metadata type
-    unique_values = {
-        'action': metadata['action'].unique().tolist(),
-        'object': metadata['object'].unique().tolist(),
-        'location': metadata['location'].unique().tolist(),
-        'time': metadata['time'].unique().tolist(),
-    }
-
-    # Return the dictionary of unique metadata values
-    return unique_values
+    # Get the list of available filters
+    filters = metadata.columns.tolist()
+    
+    # Return the list of available filters
+    return filters

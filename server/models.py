@@ -164,7 +164,7 @@ def embed_text(text, model):
     if 'clip-laion' in model:
         return embed_text_laion(text)
     elif 'clip-vit-webli' in model:
-        return embed_image_webli(text)
+        return embed_text_webli(text)
     # If the model is 'clip-openai', call the function for OpenAI's CLIP model
     elif 'clip-openai' in model:
         return embed_text_open_clip(text)

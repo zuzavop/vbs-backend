@@ -22,6 +22,7 @@ max_depth = 2
 DATA = None
 DATA_COLLECTIONS = {}
 TIME_COLLECTIONS = {}
+METADATA_COLLECTIONS = {}
 CUR_SELECTION = None
 
 
@@ -31,12 +32,14 @@ class memory_data_storage:
     IDS = None
     LABELS = None
     TIME = None
+    METADATA = None
 
-    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None):
+    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None):
         self.DATA = new_data
         self.IDS = new_ids
         self.LABELS = new_labels
         self.TIME = new_time
+        self.METADATA = new_metadata
 
 
 def get_available_memory():
@@ -81,6 +84,32 @@ def get_time(new_data=None):
                 with open(new_data.TIME, 'rb') as f:
                     tmp_data = dill.load(f)
                 TIME_COLLECTIONS[new_data.TIME] = np.array(tmp_data)
+    else:
+        return np.array([])
+    
+    
+def get_metadata(new_data=None):
+    global DATA
+    global METADATA_COLLECTIONS
+    
+    if new_data is None and hasattr(DATA, 'METADATA'):
+        l.logger.info(DATA.METADATA)
+        if DATA.METADATA not in METADATA_COLLECTIONS:
+            if DATA.METADATA is not None:
+                with open(DATA.METADATA, 'rb') as f:
+                    tmp_data = dill.load(f)
+                if DATA.METADATA not in METADATA_COLLECTIONS:
+                    METADATA_COLLECTIONS[DATA.METADATA] = np.array(tmp_data)
+            else:
+                return np.array([])
+        return METADATA_COLLECTIONS[DATA.METADATA]
+    elif new_data is not None and hasattr(new_data, 'METADATA'):
+        if new_data.METADATA not in METADATA_COLLECTIONS:
+            l.logger.info(new_data.METADATA)
+            if new_data.METADATA is not None:
+                with open(new_data.METADATA, 'rb') as f:
+                    tmp_data = dill.load(f)
+                METADATA_COLLECTIONS[new_data.METADATA] = np.array(tmp_data)
     else:
         return np.array([])
 
@@ -167,6 +196,7 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
             with open(cur_file, 'rb') as f:
                 DATA_COLLECTIONS[data_collection_name] = dill.load(f)
                 get_time(DATA_COLLECTIONS[data_collection_name])
+                get_metadata(DATA_COLLECTIONS[data_collection_name])
 
         if cur_dataset == dataset and cur_model == model:
             file_path = cur_file

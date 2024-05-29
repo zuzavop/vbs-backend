@@ -79,6 +79,12 @@ if [ -d "$directory_path" ]; then
           python keyframes_renamer_to_match_features.py -d "./keyframes/"
       fi
 
+      metadata_file=$(find "$subdirectory" -type f -name "*metadata.csv")
+      if [ -n "$metadata_file" ]; then
+          echo "Found metadata file: $metadata_file"
+          python create_db_from_metadata.py --metadata-file "$metadata_file"
+      fi
+
     fi
   done
 else

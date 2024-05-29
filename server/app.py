@@ -241,7 +241,7 @@ async def text_query(query_params: dict):
     is_life_logging = bool(query_params.get('life_log', c.BASE_LIFE_LOG))
 
     # Call the function to retrieve images
-    images = fs.get_images_by_text_query(query, k, dataset, model, is_life_logging)
+    images = fs.get_images_by_temporal_query(query, k, dataset, model, is_life_logging)
 
     # Create return dictionary
     ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
