@@ -92,26 +92,27 @@ def get_metadata(new_data=None):
     global DATA
     global METADATA_COLLECTIONS
     
+    column_names = ['id', 'song name', 'album name', 'artist name', 'utc_time', 'local_time', 'latitude', 'longitude', 'semantic_name', 'time_zone', 'hour', 'weekday']
+    
     if new_data is None and hasattr(DATA, 'METADATA'):
         l.logger.info(DATA.METADATA)
         if DATA.METADATA not in METADATA_COLLECTIONS:
             if DATA.METADATA is not None:
-                with open(DATA.METADATA, 'rb') as f:
-                    tmp_data = dill.load(f)
-                if DATA.METADATA not in METADATA_COLLECTIONS:
-                    METADATA_COLLECTIONS[DATA.METADATA] = np.array(tmp_data)
+                tmp_data = pd.read_pickle(DATA.METADATA)
+                tmp_data.columns = column_names
+                METADATA_COLLECTIONS[DATA.METADATA] = tmp_data
             else:
-                return np.array([])
+                return pd.DataFrame()
         return METADATA_COLLECTIONS[DATA.METADATA]
     elif new_data is not None and hasattr(new_data, 'METADATA'):
         if new_data.METADATA not in METADATA_COLLECTIONS:
             l.logger.info(new_data.METADATA)
             if new_data.METADATA is not None:
-                with open(new_data.METADATA, 'rb') as f:
-                    tmp_data = dill.load(f)
-                METADATA_COLLECTIONS[new_data.METADATA] = np.array(tmp_data)
+                tmp_data = pd.read_pickle(new_data.METADATA)
+                tmp_data.columns = column_names
+                METADATA_COLLECTIONS[new_data.METADATA] = tmp_data
     else:
-        return np.array([])
+        return pd.DataFrame()
 
 
 def name_splitter(dataset):
