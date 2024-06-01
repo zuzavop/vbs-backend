@@ -4,6 +4,7 @@ import time
 import torch
 
 import numpy as np
+import pandas as pd
 
 from PIL import Image
 
@@ -76,6 +77,15 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str, filte
     ids = db.get_ids()
     labels = db.get_labels()
     db_time = db.get_time()
+    
+    if filter != '':
+        ids_series = pd.Series(ids.astype(str))
+        filtered_indices = np.where(ids_series.str.split('_')[0].contains(filter))[0]
+        data = data[filtered_indices]
+        ids = ids[filtered_indices]
+        labels = labels[filtered_indices]
+        if dataset != 'LSC':
+            db_time = db_time[filtered_indices]
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(text_features, data)
@@ -130,6 +140,15 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, fi
     ids = db.get_ids()
     labels = db.get_labels()
     db_time = db.get_time()
+    
+    if filter != '':
+        ids_series = pd.Series(ids.astype(str))
+        filtered_indices = np.where(ids_series.str.split('_')[0].contains(filter))[0]
+        data = data[filtered_indices]
+        ids = ids[filtered_indices]
+        labels = labels[filtered_indices]
+        if dataset != 'LSC':
+            db_time = db_time[filtered_indices]
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(image_features, data)
@@ -178,6 +197,15 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, filter: st
     ids = db.get_ids()
     labels = db.get_labels()
     db_time = db.get_time()
+    
+    if filter != '':
+        ids_series = pd.Series(ids.astype(str))
+        filtered_indices = np.where(ids_series.str.split('_')[0].contains(filter))[0]
+        data = data[filtered_indices]
+        ids = ids[filtered_indices]
+        labels = labels[filtered_indices]
+        if dataset != 'LSC':
+            db_time = db_time[filtered_indices]
 
     # Get the video id and frame_id
     video_id, frame_id = db.uri_spliter(id, dataset)
@@ -436,7 +464,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
 
 def filter_metadata(query: str, metadata_type: str, k: int, dataset: str):
     # Load metadata from the database
-    db.load_features(dataset)
+    db.load_features(dataset, 'clip-vit-webli')
     metadata = db.get_metadata()
     
     l.logger.info(metadata.head())
@@ -450,7 +478,7 @@ def filter_metadata(query: str, metadata_type: str, k: int, dataset: str):
 
 def get_filters(dataset: str):
     # Load metadata from the database
-    db.load_features(dataset)
+    db.load_features(dataset, 'clip-vit-webli')
     metadata = db.get_metadata()
 
     # Get the list of available filters
