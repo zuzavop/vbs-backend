@@ -61,7 +61,7 @@ def get_cosine_ranking(query_vector, matrix):
     return nearest_neighbors, dot_product
 
 
-def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
+def get_images_by_text_query(query: str, k: int, dataset: str, model: str, filter: str):
     start_time = time.time()
 
     # Tokenize query input and encode the data using the selected model
@@ -115,7 +115,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str):
     return most_similar_samples
 
 
-def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
+def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, filter: str):
     start_time = time.time()
 
     # Preprocess query input and encode the data using the selected model
@@ -169,7 +169,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str):
     return most_similar_samples
 
 
-def get_images_by_image_id(id: str, k: int, dataset: str, model: str):
+def get_images_by_image_id(id: str, k: int, dataset: str, model: str, filter: str):
     start_time = time.time()
 
     # Load data
@@ -355,12 +355,6 @@ def get_random_video_frame(dataset: str, model: str):
     return video_images
 
 
-def get_video_by_id(video_id: str, dataset: str):
-    # TODO
-    print(video_id, dataset)
-    return None
-
-
 def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, is_life_log: bool):
     start_time = time.time()
     
@@ -442,7 +436,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
 
 def filter_metadata(query: str, metadata_type: str, k: int, dataset: str):
     # Load metadata from the database
-    db.load_metadata(dataset)
+    db.load_features(dataset)
     metadata = db.get_metadata()
     
     l.logger.info(metadata.head())
@@ -456,7 +450,7 @@ def filter_metadata(query: str, metadata_type: str, k: int, dataset: str):
 
 def get_filters(dataset: str):
     # Load metadata from the database
-    db.load_metadata(dataset)
+    db.load_features(dataset)
     metadata = db.get_metadata()
 
     # Get the list of available filters

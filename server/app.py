@@ -126,9 +126,10 @@ async def text_query(query_params: dict):
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    filter = query_params.get('filter', '')
 
     # Call the function to retrieve images
-    images = fs.get_images_by_text_query(query, k, dataset, model)
+    images = fs.get_images_by_text_query(query, k, dataset, model, filter)
 
     # Create return dictionary
     ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
@@ -161,6 +162,7 @@ async def image_query(
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    filter = query_params.get('filter', '')
 
     try:
         # Read the uploaded image file
@@ -169,7 +171,7 @@ async def image_query(
         # Open the image using Pillow (PIL)
         uploaded_image = Image.open(BytesIO(image_data))
 
-        images = fs.get_images_by_image_query(uploaded_image, k, dataset, model)
+        images = fs.get_images_by_image_query(uploaded_image, k, dataset, model, filter)
 
         # Create return dictionary
         ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
@@ -204,11 +206,12 @@ async def image_query_by_id(query_params: dict):
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    filter = query_params.get('filter', '')
 
     # Call the function to retrieve images
     if item_id == '':
         item_id = f'{video_id}_{frame_id}'
-    images = fs.get_images_by_image_id(item_id, k, dataset, model)
+    images = fs.get_images_by_image_id(item_id, k, dataset, model, filter)
 
     # Create return dictionary
     ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
@@ -239,9 +242,10 @@ async def text_query(query_params: dict):
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     is_life_logging = bool(query_params.get('life_log', c.BASE_LIFE_LOG))
+    filter = query_params.get('filter', '')
 
     # Call the function to retrieve images
-    images = fs.get_images_by_temporal_query(query, k, dataset, model, is_life_logging)
+    images = fs.get_images_by_temporal_query(query, k, dataset, model, is_life_logging, filter)
 
     # Create return dictionary
     ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
@@ -322,36 +326,15 @@ async def get_video_frames(query_params: dict):
         return json_response_creator(ret_dict)
 
 
-# Define the 'getVideo' route
-@app.get('/getVideo')
-async def get_video(query_params: dict):
-    '''
-    Get URI of video.
-    '''
-    start_time = time.time()
-    l.logger.info(f'Get video {video_id}')
-    
-    video_id = query_params.get('video_id', '')
-    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
-
-    # Call the function to retrieve video images
-    video = fs.get_video_by_id(video_id, dataset)
-
-    execution_time = time.time() - start_time
-    l.logger.info(f'/getVideo: {execution_time:.6f} secs')
-
-    return {'video_id': video_id, 'video': video}
-
-
-@app.get('/getFiltres/')
-async def get_filtres(query_params: dict):
+@app.get('/getFilters/')
+async def get_filters(dataset: str):
     '''
     Get a list of filters.
     '''
     start_time = time.time()
-    l.logger.info(query_params)
+    l.logger.info(dataset)
     
-    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    dataset = dataset.upper()
     
     # Call the function to retrieve filters
     filters = fs.get_filters(dataset)

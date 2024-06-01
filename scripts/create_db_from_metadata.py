@@ -38,11 +38,12 @@ def extend_db_with_metadata(db_dir, metadata_path):
     pkl_files = [
         file
         for file in os.listdir(db_dir)
-        if file.endswith('.pkl')
+        if file.endswith('.pkl') and 'db_time' not in file and 'db_metadata' not in file
     ]
     
     try:
         metadata_file = pd.read_csv(metadata_path, delimiter=',')
+        metadata_file.set_index('minute_id', inplace=True)
     except Exception as e:
         print(f'Could not load metadata file with {e}')
         return
@@ -77,30 +78,31 @@ def extend_db_with_metadata(db_dir, metadata_path):
                 for id in tqdm(ids):
                     minute_id = id[:13]
 
-                    # Select the metadata corresponding to the given frame ID
-                    selected_metadata = metadata_file[
-                        metadata_file['minute_id'] == minute_id
-                    ]
-                    
-                    date = datetime(int(id[:4]), int(id[4:6]), int(id[6:8]))
+                    try:
+                        # Select the metadata corresponding to the given frame ID
+                        selected_metadata = metadata_file.loc[minute_id]
+                        
+                        date = datetime(int(id[:4]), int(id[4:6]), int(id[6:8]))
 
-                    # Append the extracted metadata to the list
-                    metadata.append(
-                        [
-                            id,
-                            selected_metadata['song name'].item(),
-                            selected_metadata['album name'].item(),
-                            selected_metadata['artist name'].item(),
-                            selected_metadata['utc_time'].item(),
-                            selected_metadata['local_time'].item(),
-                            selected_metadata['latitude'].item(),
-                            selected_metadata['longitude'].item(),
-                            selected_metadata['semantic_name'].item(),
-                            selected_metadata['time_zone'].item(),
-                            id.split('_')[1][:2],
-                            date.weekday(),
-                        ]
-                    )
+                        # Append the extracted metadata to the list
+                        metadata.append(
+                            [
+                                id,
+                                selected_metadata['song name'].item(),
+                                selected_metadata['album name'].item(),
+                                selected_metadata['artist name'].item(),
+                                selected_metadata['utc_time'].item(),
+                                selected_metadata['local_time'].item(),
+                                selected_metadata['latitude'].item(),
+                                selected_metadata['longitude'].item(),
+                                selected_metadata['semantic_name'].item(),
+                                selected_metadata['time_zone'].item(),
+                                id.split('_')[1][:2],
+                                date.weekday(),
+                            ]
+                        )
+                    except Exception as e:
+                        print(f'Could not find metadata for {minute_id} and {e}')
 
                 print(f'Found: {len(metadata)}, Ids: {len(ids)}')
 

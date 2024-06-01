@@ -21,12 +21,14 @@ class memory_data_storage:
     IDS = None
     LABELS = None
     TIME = None
+    METADATA = None
 
-    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None):
+    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None):
         self.DATA = new_data
         self.IDS = new_ids
         self.LABELS = new_labels
         self.TIME = new_time
+        self.METADATA = new_metadata
 
 
 # Function to extend a database with timestamps obtained from corresponding msb files
@@ -35,7 +37,7 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
     pkl_files = [
         file
         for file in os.listdir(db_dir)
-        if file.endswith('.pkl') and 'db_time' not in file
+        if file.endswith('.pkl') and 'db_time' not in file and 'db_metadata' not in file
     ]
 
     # Get all msb files (ending with .tsv)
