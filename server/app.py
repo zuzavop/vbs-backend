@@ -126,10 +126,12 @@ async def text_query(query_params: dict):
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
-    filter = query_params.get('filter', '')
+    filter = query_params.get('filter', {})
+    
+    selected_indeces = fs.filter(filter, dataset)
 
     # Call the function to retrieve images
-    images = fs.get_images_by_text_query(query, k, dataset, model, filter)
+    images = fs.get_images_by_text_query(query, k, dataset, model, selected_indeces)
 
     # Create return dictionary
     ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
@@ -162,7 +164,9 @@ async def image_query(
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
-    filter = query_params.get('filter', '')
+    filter = query_params.get('filter', {})
+    
+    selected_indeces = fs.filter(filter, dataset)
 
     try:
         # Read the uploaded image file
@@ -171,7 +175,7 @@ async def image_query(
         # Open the image using Pillow (PIL)
         uploaded_image = Image.open(BytesIO(image_data))
 
-        images = fs.get_images_by_image_query(uploaded_image, k, dataset, model, filter)
+        images = fs.get_images_by_image_query(uploaded_image, k, dataset, model, selected_indeces)
 
         # Create return dictionary
         ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
@@ -206,12 +210,14 @@ async def image_query_by_id(query_params: dict):
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
-    filter = query_params.get('filter', '')
+    filter = query_params.get('filter', {})
+    
+    selected_indeces = fs.filter(filter, dataset)
 
     # Call the function to retrieve images
     if item_id == '':
         item_id = f'{video_id}_{frame_id}'
-    images = fs.get_images_by_image_id(item_id, k, dataset, model, filter)
+    images = fs.get_images_by_image_id(item_id, k, dataset, model, selected_indeces)
 
     # Create return dictionary
     ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
@@ -267,8 +273,7 @@ async def filter(query_params: dict):
     start_time = time.time()
     l.logger.info(query_params)
     
-    filter = query_params.get('filter', '')
-    filter_type = query_params.get('filter_type', 'tag')
+    filter = query_params.get('filter', {})
     k = min(query_params.get('k', c.BASE_K), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
@@ -276,7 +281,7 @@ async def filter(query_params: dict):
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     
     # Call the function to retrieve images
-    images = fs.filter_metadata(filter, filter_type, k, dataset)
+    images = fs.filter_metadata(filter, k, dataset)
     
     # Create return dictionary
     ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)

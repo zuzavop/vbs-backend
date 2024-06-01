@@ -99,7 +99,7 @@ def get_metadata(new_data=None):
         if DATA.METADATA not in METADATA_COLLECTIONS:
             if DATA.METADATA is not None:
                 tmp_data = pd.read_pickle(DATA.METADATA)
-                tmp_data.columns = column_names
+                tmp_data = pd.DataFrame(tmp_data, columns=column_names)
                 METADATA_COLLECTIONS[DATA.METADATA] = tmp_data
             else:
                 return pd.DataFrame()
@@ -109,7 +109,7 @@ def get_metadata(new_data=None):
             l.logger.info(new_data.METADATA)
             if new_data.METADATA is not None:
                 tmp_data = pd.read_pickle(new_data.METADATA)
-                tmp_data.columns = column_names
+                tmp_data = pd.DataFrame(tmp_data, columns=column_names)
                 METADATA_COLLECTIONS[new_data.METADATA] = tmp_data
     else:
         return pd.DataFrame()

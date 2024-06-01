@@ -62,7 +62,7 @@ def get_cosine_ranking(query_vector, matrix):
     return nearest_neighbors, dot_product
 
 
-def get_images_by_text_query(query: str, k: int, dataset: str, model: str, filter: str):
+def get_images_by_text_query(query: str, k: int, dataset: str, model: str, selected_indices: list):
     start_time = time.time()
 
     # Tokenize query input and encode the data using the selected model
@@ -78,14 +78,12 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str, filte
     labels = db.get_labels()
     db_time = db.get_time()
     
-    if filter != '':
-        ids_series = pd.Series(ids.astype(str))
-        filtered_indices = np.where(ids_series.str.split('_')[0].contains(filter))[0]
-        data = data[filtered_indices]
-        ids = ids[filtered_indices]
-        labels = labels[filtered_indices]
-        if dataset != 'LSC':
-            db_time = db_time[filtered_indices]
+    if selected_indices is not None:
+        data = data[selected_indices]
+        ids = ids[selected_indices]
+        labels = labels[selected_indices]
+        if db_time != []:
+            db_time = db_time[selected_indices]
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(text_features, data)
@@ -125,7 +123,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str, filte
     return most_similar_samples
 
 
-def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, filter: str):
+def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, selected_indices: list):
     start_time = time.time()
 
     # Preprocess query input and encode the data using the selected model
@@ -141,14 +139,12 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, fi
     labels = db.get_labels()
     db_time = db.get_time()
     
-    if filter != '':
-        ids_series = pd.Series(ids.astype(str))
-        filtered_indices = np.where(ids_series.str.split('_')[0].contains(filter))[0]
-        data = data[filtered_indices]
-        ids = ids[filtered_indices]
-        labels = labels[filtered_indices]
-        if dataset != 'LSC':
-            db_time = db_time[filtered_indices]
+    if selected_indices is not None:
+        data = data[selected_indices]
+        ids = ids[selected_indices]
+        labels = labels[selected_indices]
+        if db_time != []:
+            db_time = db_time[selected_indices]
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(image_features, data)
@@ -188,7 +184,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, fi
     return most_similar_samples
 
 
-def get_images_by_image_id(id: str, k: int, dataset: str, model: str, filter: str):
+def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_indices: list):
     start_time = time.time()
 
     # Load data
@@ -198,14 +194,12 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, filter: st
     labels = db.get_labels()
     db_time = db.get_time()
     
-    if filter != '':
-        ids_series = pd.Series(ids.astype(str))
-        filtered_indices = np.where(ids_series.str.split('_')[0].contains(filter))[0]
-        data = data[filtered_indices]
-        ids = ids[filtered_indices]
-        labels = labels[filtered_indices]
-        if dataset != 'LSC':
-            db_time = db_time[filtered_indices]
+    if selected_indices is not None:
+        data = data[selected_indices]
+        ids = ids[selected_indices]
+        labels = labels[selected_indices]
+        if db_time != []:
+            db_time = db_time[selected_indices]
 
     # Get the video id and frame_id
     video_id, frame_id = db.uri_spliter(id, dataset)
@@ -383,7 +377,7 @@ def get_random_video_frame(dataset: str, model: str):
     return video_images
 
 
-def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, is_life_log: bool):
+def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, is_life_log: bool, selected_indices: list):
     start_time = time.time()
     
     queries = query.split(">")
@@ -462,18 +456,58 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
     return most_similar_samples
 
 
-def filter_metadata(query: str, metadata_type: str, k: int, dataset: str):
+def filter(filter: dict, dataset: str):
     # Load metadata from the database
     db.load_features(dataset, 'clip-vit-webli')
     metadata = db.get_metadata()
     
-    l.logger.info(metadata.head())
+    # Initialize indices with all indices in metadata
+    indices = metadata.index.tolist()
     
-    # Filter the metadata based on the query and metadata type
-    filtered_metadata = metadata[metadata[metadata_type].str.contains(query, case=False)][:k]
+    # Iterate over the filter dictionary and apply each filter
+    for column, value in filter.items():
+        # Get the indices of the metadata that match the current filter
+        filter_indices = metadata[metadata[column].str.contains(value, case=False)].index.tolist()
+        
+        # Intersect indices with filter_indices
+        indices = list(set(indices) & set(filter_indices))
     
-    # Return the filtered metadata as a list of dictionaries
-    return filtered_metadata.to_dict(orient='records')
+    return indices
+
+
+def filter_metadata(filter: dict, k: int, dataset: str):
+    # Load metadata from the database
+    db.load_features(dataset, 'clip-vit-webli')
+    ids = db.get_ids()
+    data = db.get_data()
+    labels = db.get_labels()
+    db_time = db.get_time()
+    
+    selected_indices = filter(filter, dataset)
+    
+    # If settings multiply and change to integer
+    selected_data = data[selected_indices]
+
+    # Get the time stamps for the sliced IDs
+    db_time = get_time_stamps(db_time, selected_indices, ids, dataset)
+
+    # Give only back the k most similar embeddings
+    most_similar_samples = list(
+        zip(
+            ids[selected_indices].tolist(),
+            [i for i in range(len(selected_indices))],
+            selected_data.tolist(),
+            labels[selected_indices].tolist(),
+            db_time.tolist(),
+        )
+    )
+
+    del data
+    del ids
+    del labels
+    del db_time
+
+    return most_similar_samples
 
 
 def get_filters(dataset: str):
