@@ -381,7 +381,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
     start_time = time.time()
     
     queries = query.split(">")
-    separator = db.name_splitter(dataset)
+    separator = db.name_splitter(dataset).encode()
 
     # Tokenize query input and encode the data using the selected model
     text_features = [m.embed_text(q, model) for q in queries]
@@ -489,8 +489,8 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
 
 
 def weekday_to_number(weekday):
-    weekdays = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
-    return weekdays.get(weekday, "Invalid weekday")
+    weekdays = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6}
+    return weekdays.get(weekday, -1)
 
 
 def get_filter_indices(filter: dict, dataset: str):
@@ -505,10 +505,20 @@ def get_filter_indices(filter: dict, dataset: str):
     for column, value in filter.items():
         if column == "weekday" and isinstance(value, str):
             value = weekday_to_number(value)
+        if column == "id" and value.startswith("yyyy"):
+            value1 = value.replace("yyyy", "2019")
+            filter_indices1 = metadata[metadata[column].str.startswith(value1)].index.tolist()
+            value2 = value.replace("yyyy", "2020")
+            filter_indices2 = metadata[metadata[column].str.startswith(value2)].index.tolist()
+            filter_indices = filter_indices1 + filter_indices2
+            indices = list(set(indices) & set(filter_indices))
+            continue
         
         # Get the indices of the metadata that match the current filter
         if column == 'id':
             filter_indices = metadata[metadata[column].str.startswith(value)].index.tolist()
+        elif column == "weekday":
+            filter_indices = metadata[metadata[column] == value].index.tolist()
         else:
             filter_indices = metadata[metadata[column].str.contains(value, case=False)].index.tolist()
         

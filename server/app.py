@@ -126,7 +126,7 @@ async def text_query(query_params: dict):
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
-    filter = query_params.get('filter', {})
+    filter = query_params.get('filters', {})
     
     if filter == {}:
         selected_indeces = None
@@ -167,7 +167,7 @@ async def image_query(
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
-    filter = query_params.get('filter', {})
+    filter = query_params.get('filters', {})
     
     if filter == {}:
         selected_indeces = None
@@ -216,7 +216,7 @@ async def image_query_by_id(query_params: dict):
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
-    filter = query_params.get('filter', {})
+    filter = query_params.get('filters', {})
     
     if filter == {}:
         selected_indeces = None
@@ -257,7 +257,7 @@ async def text_query(query_params: dict):
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     is_life_logging = bool(query_params.get('life_log', c.BASE_LIFE_LOG))
-    filter = query_params.get('filter', {})
+    filter = query_params.get('filters', {})
     
     if filter == {}:
         selected_indeces = None
@@ -287,7 +287,7 @@ async def filter(query_params: dict):
     start_time = time.time()
     l.logger.info(query_params)
     
-    filter = query_params.get('filter', {})
+    filter = query_params.get('filters', {})
     k = min(query_params.get('k', c.BASE_K), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
