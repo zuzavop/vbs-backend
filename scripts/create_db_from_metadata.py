@@ -80,7 +80,7 @@ def extend_db_with_metadata(db_dir, metadata_path):
 
                     try:
                         # Select the metadata corresponding to the given frame ID
-                        selected_metadata = metadata_file.loc[minute_id]
+                        selected_metadata = metadata_file.loc[minute_id].copy()
                         selected_metadata.fillna('', inplace=True)
                         
                         date = datetime(int(id[:4]), int(id[4:6]), int(id[6:8]))
