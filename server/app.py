@@ -128,7 +128,10 @@ async def text_query(query_params: dict):
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     filter = query_params.get('filter', {})
     
-    selected_indeces = fs.filter(filter, dataset)
+    if filter == {}:
+        selected_indeces = None
+    else:
+        selected_indeces = fs.get_filter_indices(filter, dataset)
 
     # Call the function to retrieve images
     images = fs.get_images_by_text_query(query, k, dataset, model, selected_indeces)
@@ -166,7 +169,10 @@ async def image_query(
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     filter = query_params.get('filter', {})
     
-    selected_indeces = fs.filter(filter, dataset)
+    if filter == {}:
+        selected_indeces = None
+    else:
+        selected_indeces = fs.get_filter_indices(filter, dataset)
 
     try:
         # Read the uploaded image file
@@ -212,7 +218,10 @@ async def image_query_by_id(query_params: dict):
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     filter = query_params.get('filter', {})
     
-    selected_indeces = fs.filter(filter, dataset)
+    if filter == {}:
+        selected_indeces = None
+    else:
+        selected_indeces = fs.get_filter_indices(filter, dataset)
 
     # Call the function to retrieve images
     if item_id == '':
@@ -248,10 +257,15 @@ async def text_query(query_params: dict):
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     is_life_logging = bool(query_params.get('life_log', c.BASE_LIFE_LOG))
-    filter = query_params.get('filter', '')
+    filter = query_params.get('filter', {})
+    
+    if filter == {}:
+        selected_indeces = None
+    else:
+        selected_indeces = fs.get_filter_indices(filter, dataset)
 
     # Call the function to retrieve images
-    images = fs.get_images_by_temporal_query(query, k, dataset, model, is_life_logging, filter)
+    images = fs.get_images_by_temporal_query(query, k, dataset, model, is_life_logging, selected_indeces)
 
     # Create return dictionary
     ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)

@@ -82,7 +82,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str, selec
         data = data[selected_indices]
         ids = ids[selected_indices]
         labels = labels[selected_indices]
-        if db_time != []:
+        if db_time.shape[0] > 0:
             db_time = db_time[selected_indices]
 
     # Calculate cosine distance between embedding and data and sort similarities
@@ -143,7 +143,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, se
         data = data[selected_indices]
         ids = ids[selected_indices]
         labels = labels[selected_indices]
-        if db_time != []:
+        if db_time.shape[0] > 0:
             db_time = db_time[selected_indices]
 
     # Calculate cosine distance between embedding and data and sort similarities
@@ -198,7 +198,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_i
         data = data[selected_indices]
         ids = ids[selected_indices]
         labels = labels[selected_indices]
-        if db_time != []:
+        if db_time.shape[0] > 0:
             db_time = db_time[selected_indices]
 
     # Get the video id and frame_id
@@ -395,11 +395,17 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
     ids = db.get_ids()
     labels = db.get_labels()
     db_time = db.get_time()
+    
+    if selected_indices is not None:
+        data = data[selected_indices]
+        ids = ids[selected_indices]
+        labels = labels[selected_indices]
+        if db_time.shape[0] > 0:
+            db_time = db_time[selected_indices]
         
     if is_life_log: 
-        print() #TODO
-    else: # Temporal query where all queries should be in the same order TODO
         sequences = []
+        separator_ids = [id.rpartition(separator)[0] for id in ids]
         for i, text_f in enumerate(text_features):
             _, sim = get_cosine_ranking(text_f, data)
             if i == 0:
@@ -409,18 +415,44 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
                 # For subsequent actions, extend existing sequences
                 new_sequences = []
                 for seq in sequences:
+                    seq_id = seq[-1][0]
+                    seq_separator_id = separator_ids[seq_id]
                     for id, s in enumerate(sim):
-                        if id > seq[-1][0]  and ids[id].split(separator)[0] == ids[seq[-1][0]].rpartition(separator)[0]:
-                            new_seq = seq + [(id, s)]
-                            new_sequences.append(new_seq)
-                        elif ids[id].rpartition(separator)[0] != ids[seq[-1][0]].rpartition(separator)[0]:
+                        if id > seq_id:
+                            if separator_ids[id] == seq_separator_id:
+                                new_seq = seq + [(id, s)]
+                                new_sequences.append(new_seq)
+                        elif separator_ids[id] != seq_separator_id:
                             break
                 sequences = new_sequences
         
          # Sort the sequences by their total similarity score
         sequences.sort(key=lambda seq: -sum(s for _, s in seq))
+    else:
+        separator_ids = [id.rpartition(separator)[0] for id in ids]
+        max_scores_per_day = {}
         
+        for i, text_f in enumerate(text_features):
+            _, sim = get_cosine_ranking(text_f, data)
+            for id, s in enumerate(sim):
+                day = separator_ids[id]
+                if day not in max_scores_per_day:
+                    max_scores_per_day[day] = [(id, s)]
+                elif len(max_scores_per_day[day]) <= i:
+                    max_scores_per_day[day].append((id, s))
+                elif s > max_scores_per_day[day][i][1]:
+                    max_scores_per_day[day][i] = (id, s)
+
+        # Get the images with the maximum similarity score for each day
+        max_images = [max_scores_per_day[day] for day in max_scores_per_day]
+
+        # Sort the images by their similarity score
+        max_images.sort(key=lambda img: -sum(s for _, s in img))
+        sequences = [[img] for img in max_images]
+
     sorted_indices = sequences[:k]
+    similarities = [s.item() for seq in sorted_indices for _, s in seq]
+    sorted_indices = [idx for seq in sorted_indices for idx, _ in seq]
 
     # If settings multiply and change to integer
     selected_data = data[sorted_indices]
@@ -435,7 +467,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
         zip(
             ids[sorted_indices].tolist(),
             [i for i in range(len(sorted_indices))],
-            similarities[sorted_indices].tolist(),
+            similarities,
             selected_data.tolist(),
             labels[sorted_indices].tolist(),
             db_time.tolist(),
@@ -456,7 +488,12 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
     return most_similar_samples
 
 
-def filter(filter: dict, dataset: str):
+def weekday_to_number(weekday):
+    weekdays = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6}
+    return weekdays.get(weekday, "Invalid weekday")
+
+
+def get_filter_indices(filter: dict, dataset: str):
     # Load metadata from the database
     db.load_features(dataset, 'clip-vit-webli')
     metadata = db.get_metadata()
@@ -466,8 +503,14 @@ def filter(filter: dict, dataset: str):
     
     # Iterate over the filter dictionary and apply each filter
     for column, value in filter.items():
+        if column == "weekday" and isinstance(value, str):
+            value = weekday_to_number(value)
+        
         # Get the indices of the metadata that match the current filter
-        filter_indices = metadata[metadata[column].str.contains(value, case=False)].index.tolist()
+        if column == 'id':
+            filter_indices = metadata[metadata[column].str.startswith(value)].index.tolist()
+        else:
+            filter_indices = metadata[metadata[column].str.contains(value, case=False)].index.tolist()
         
         # Intersect indices with filter_indices
         indices = list(set(indices) & set(filter_indices))
@@ -483,7 +526,7 @@ def filter_metadata(filter: dict, k: int, dataset: str):
     labels = db.get_labels()
     db_time = db.get_time()
     
-    selected_indices = filter(filter, dataset)
+    selected_indices = get_filter_indices(filter, dataset)[:k]
     
     # If settings multiply and change to integer
     selected_data = data[selected_indices]
@@ -496,6 +539,7 @@ def filter_metadata(filter: dict, k: int, dataset: str):
         zip(
             ids[selected_indices].tolist(),
             [i for i in range(len(selected_indices))],
+            np.zeros(len(selected_indices)).tolist(),
             selected_data.tolist(),
             labels[selected_indices].tolist(),
             db_time.tolist(),

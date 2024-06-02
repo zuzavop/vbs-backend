@@ -59,6 +59,8 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
         # Walk through the directory structure
         for folder, subfolders, files in os.walk(DATABASE_ROOT):
             for file in files:
+                if "202001" in folder and file in ["16.hdf5", "17.hdf5", "18.hdf5"]:
+                    continue
                 # Join the folder and file name to create the full file path
                 file_path = os.path.join(folder, file)
                 # Append the file path to the list
