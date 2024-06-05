@@ -408,22 +408,25 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
         splits = [i + 1 for i in range(len(separator_ids) - 1) if separator_ids[i] != separator_ids[i + 1]]
         max_values_and_indices = []
         
-        for i, text_f in enumerate(text_features):
+        for text_f in text_features:
             _, sim = get_cosine_ranking(text_f, data)
-            days = np.split(sim, splits)
-            max_values_and_indices.append([(arr.max(), arr.argmax()) for arr in days])
-
-        # TODO change 
+            hours = np.split(sim, splits)
+            max_values_and_indices.append([(arr.max(), arr.argmax()) for arr in hours])
+            
+        # max_images = []
+        # day_splits = [i + 1 for i in range(len(splits) - 1) if separator_ids[splits[i]][:8] != separator_ids[splits[i + 1]][:8]]
+        # days = np.split(splits, day_splits)
+        # for day in days:
         max_images = [[(max_values_and_indices[i][j][0], max_values_and_indices[i][j][1] + (splits[j - 1] if j > 0 else 0)) for i in range(len(max_values_and_indices))] for j in range(len(max_values_and_indices[0]))]
-        
-        # Sort the images by their similarity score        
+            
+        # Sort the images by their similarity score
         max_images.sort(key=lambda img: -sum(s for s,_ in img))
     else:
         separator_ids = np.array([id.split(separator)[0] if dataset == 'LSC' else id.rpartition(separator)[0] for id in ids])
         splits = [i + 1 for i in range(len(separator_ids) - 1) if separator_ids[i] != separator_ids[i + 1]]
         max_values_and_indices = []
         
-        for i, text_f in enumerate(text_features):
+        for text_f in text_features:
             _, sim = get_cosine_ranking(text_f, data)
             days = np.split(sim, splits)
             max_values_and_indices.append([(arr.max(), arr.argmax()) for arr in days])
