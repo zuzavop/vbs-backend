@@ -404,55 +404,37 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
             db_time = db_time[selected_indices]
         
     if is_life_log: 
-        sequences = []
-        separator_ids = [id.rpartition(separator)[0] for id in ids]
+        separator_ids = np.array([id[:11] for id in ids])
+        splits = [i + 1 for i in range(len(separator_ids) - 1) if separator_ids[i] != separator_ids[i + 1]]
+        max_values_and_indices = []
+        
         for i, text_f in enumerate(text_features):
             _, sim = get_cosine_ranking(text_f, data)
-            if i == 0:
-                # For the first action, start new sequences
-                sequences = [[(id, s)] for id, s in enumerate(sim)]
-            else:
-                # For subsequent actions, extend existing sequences
-                new_sequences = []
-                for seq in sequences:
-                    seq_id = seq[-1][0]
-                    seq_separator_id = separator_ids[seq_id]
-                    for id, s in enumerate(sim):
-                        if id > seq_id:
-                            if separator_ids[id] == seq_separator_id:
-                                new_seq = seq + [(id, s)]
-                                new_sequences.append(new_seq)
-                        elif separator_ids[id] != seq_separator_id:
-                            break
-                sequences = new_sequences
+            days = np.split(sim, splits)
+            max_values_and_indices.append([(arr.max(), arr.argmax()) for arr in days])
+
+        # TODO change 
+        max_images = [[(max_values_and_indices[i][j][0], max_values_and_indices[i][j][1] + (splits[j - 1] if j > 0 else 0)) for i in range(len(max_values_and_indices))] for j in range(len(max_values_and_indices[0]))]
         
-         # Sort the sequences by their total similarity score
-        sequences.sort(key=lambda seq: -sum(s for _, s in seq))
+        # Sort the images by their similarity score        
+        max_images.sort(key=lambda img: -sum(s for s,_ in img))
     else:
-        separator_ids = [id.rpartition(separator)[0] for id in ids]
-        max_scores_per_day = {}
+        separator_ids = np.array([id.split(separator)[0] if dataset == 'LSC' else id.rpartition(separator)[0] for id in ids])
+        splits = [i + 1 for i in range(len(separator_ids) - 1) if separator_ids[i] != separator_ids[i + 1]]
+        max_values_and_indices = []
         
         for i, text_f in enumerate(text_features):
             _, sim = get_cosine_ranking(text_f, data)
-            for id, s in enumerate(sim):
-                day = separator_ids[id]
-                if day not in max_scores_per_day:
-                    max_scores_per_day[day] = [(id, s)]
-                elif len(max_scores_per_day[day]) <= i:
-                    max_scores_per_day[day].append((id, s))
-                elif s > max_scores_per_day[day][i][1]:
-                    max_scores_per_day[day][i] = (id, s)
+            days = np.split(sim, splits)
+            max_values_and_indices.append([(arr.max(), arr.argmax()) for arr in days])
 
-        # Get the images with the maximum similarity score for each day
-        max_images = [max_scores_per_day[day] for day in max_scores_per_day]
-
+        max_images = [[(max_values_and_indices[i][j][0], max_values_and_indices[i][j][1] + (splits[j - 1] if j > 0 else 0)) for i in range(len(max_values_and_indices))] for j in range(len(max_values_and_indices[0]))]
         # Sort the images by their similarity score
-        max_images.sort(key=lambda img: -sum(s for _, s in img))
-        sequences = [[img] for img in max_images]
+        max_images.sort(key=lambda img: -sum(s for s,_ in img))
 
-    sorted_indices = sequences[:k]
-    similarities = [s.item() for seq in sorted_indices for _, s in seq]
-    sorted_indices = [idx for seq in sorted_indices for idx, _ in seq]
+    sorted_indices = max_images[:k]
+    similarities = [s.item() for seq in sorted_indices for s, _ in seq]
+    sorted_indices = [idx for seq in sorted_indices for _, idx in seq]
 
     # If settings multiply and change to integer
     selected_data = data[sorted_indices]
@@ -513,6 +495,14 @@ def get_filter_indices(filter: dict, dataset: str):
             filter_indices = filter_indices1 + filter_indices2
             indices = list(set(indices) & set(filter_indices))
             continue
+        if column == "hour" and value.contains("-"):
+            value1, value2 = value.split("-")
+            filter_indices = []
+            for i in range(int(value1), int(value2)):
+                filter_indices += metadata[metadata[column].str.startswith(str(i))].index.tolist()
+            indices = list(set(indices) & set(filter_indices))
+            continue
+            
         
         # Get the indices of the metadata that match the current filter
         if column == 'id':
