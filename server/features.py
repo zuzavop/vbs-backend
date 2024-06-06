@@ -403,7 +403,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
         if db_time.shape[0] > 0:
             db_time = db_time[selected_indices]
         
-    if is_life_log: 
+    if is_life_log and len(queries) == 2: 
         separator_ids = np.array([id[:11] for id in ids])
         splits = [i + 1 for i in range(len(separator_ids) - 1) if separator_ids[i] != separator_ids[i + 1]]
         max_values_and_indices = []
@@ -413,12 +413,16 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
             hours = np.split(sim, splits)
             max_values_and_indices.append([(arr.max(), arr.argmax()) for arr in hours])
             
-        # max_images = []
-        # day_splits = [i + 1 for i in range(len(splits) - 1) if separator_ids[splits[i]][:8] != separator_ids[splits[i + 1]][:8]]
-        # days = np.split(splits, day_splits)
-        # for day in days:
-        max_images = [[(max_values_and_indices[i][j][0], max_values_and_indices[i][j][1] + (splits[j - 1] if j > 0 else 0)) for i in range(len(max_values_and_indices))] for j in range(len(max_values_and_indices[0]))]
-            
+        max_images = []
+        day_splits = [i + 1 for i in range(len(splits) - 1) if separator_ids[splits[i]][:8] != separator_ids[splits[i + 1]][:8]]
+        days = np.split(splits, day_splits)
+        for d, day in enumerate(days):
+            for i in range(len(day)):
+                cur_i = i + (day_splits[d - 1] if d > 0 else 0)
+                for j in range(i, len(day)):
+                    cur_j = j + (day_splits[d - 1] if d > 0 else 0)
+                    max_images.append([(max_values_and_indices[0][cur_i][0], max_values_and_indices[0][cur_i][1] + (splits[cur_i - 1] if j > 0 else 0)), (max_values_and_indices[1][cur_j][0], max_values_and_indices[1][cur_j][1] + (splits[cur_j - 1] if j > 0 else 0))])
+           
         # Sort the images by their similarity score
         max_images.sort(key=lambda img: -sum(s for s,_ in img))
     else:
