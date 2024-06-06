@@ -405,7 +405,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
         
     if is_life_log and len(queries) == 2: 
         separator_ids = np.array([id[:11] for id in ids])
-        splits = [i + 1 for i in range(len(separator_ids) - 1) if separator_ids[i] != separator_ids[i + 1]]
+        splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
         max_values_and_indices = []
         
         for text_f in text_features:
@@ -427,7 +427,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
         max_images.sort(key=lambda img: -sum(s for s,_ in img))
     else:
         separator_ids = np.array([id.split(separator)[0] if dataset == 'LSC' else id.rpartition(separator)[0] for id in ids])
-        splits = [i + 1 for i in range(len(separator_ids) - 1) if separator_ids[i] != separator_ids[i + 1]]
+        splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
         max_values_and_indices = []
         
         for text_f in text_features:
@@ -494,7 +494,10 @@ def get_filter_indices(filter: dict, dataset: str):
     for column, value in filter.items():
         if column == "weekday" and isinstance(value, str):
             value = weekday_to_number(value)
-        if column == "id" and value.startswith("yyyy"):
+        elif column == "id" and value.startswith("yyyymm"):
+            value = value[6:]
+            filter_indices = metadata[metadata[column].str.slice(6,8) == value].index.tolist()
+        elif column == "id" and value.startswith("yyyy"):
             value1 = value.replace("yyyy", "2019")
             filter_indices1 = metadata[metadata[column].str.startswith(value1)].index.tolist()
             value2 = value.replace("yyyy", "2020")
@@ -502,17 +505,14 @@ def get_filter_indices(filter: dict, dataset: str):
             filter_indices = filter_indices1 + filter_indices2
             indices = list(set(indices) & set(filter_indices))
             continue
-        if column == "hour" and value.contains("-"):
+        elif column == "hour" and value.contains("-"):
             value1, value2 = value.split("-")
             filter_indices = []
             for i in range(int(value1), int(value2)):
                 filter_indices += metadata[metadata[column].str.startswith(str(i))].index.tolist()
             indices = list(set(indices) & set(filter_indices))
             continue
-            
-        
-        # Get the indices of the metadata that match the current filter
-        if column == 'id':
+        elif column == 'id':
             filter_indices = metadata[metadata[column].str.startswith(value)].index.tolist()
         elif column == "weekday":
             filter_indices = metadata[metadata[column] == value].index.tolist()
