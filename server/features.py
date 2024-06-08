@@ -404,38 +404,46 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
             db_time = db_time[selected_indices]
         
     if is_life_log and len(queries) == 2: 
-        separator_ids = np.array([id[:11] for id in ids])
+        separator_ids = np.array([id[:11] for id in ids]) # TODO: setridit data podle dnu a hodin - na zacatku
         splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
-        max_values_and_indices = []
+        split_points = np.r_[0, splits, len(separator_ids)]
         
+        max_values_and_indices = []        
         for text_f in text_features:
             _, sim = get_cosine_ranking(text_f, data)
-            hours = np.split(sim, splits)
-            max_values_and_indices.append([(arr.max(), arr.argmax()) for arr in hours])
+            max_values_and_indices.append([
+                (sim[split_points[i]:split_points[i+1]].max(), sim[split_points[i]:split_points[i+1]].argmax() + split_points[i])
+                for i in range(len(split_points) - 1)
+            ])
             
-        max_images = []
         day_splits = [i + 1 for i in range(len(splits) - 1) if separator_ids[splits[i]][:8] != separator_ids[splits[i + 1]][:8]]
         days = np.split(splits, day_splits)
+        
+        max_images = []
         for d, day in enumerate(days):
+            day_start = 0 if d == 0 else day_splits[d - 1]
             for i in range(len(day)):
-                cur_i = i + (day_splits[d - 1] if d > 0 else 0)
+                cur_i = i + day_start
                 for j in range(i, len(day)):
-                    cur_j = j + (day_splits[d - 1] if d > 0 else 0)
-                    max_images.append([(max_values_and_indices[0][cur_i][0], max_values_and_indices[0][cur_i][1] + (splits[cur_i - 1] if j > 0 else 0)), (max_values_and_indices[1][cur_j][0], max_values_and_indices[1][cur_j][1] + (splits[cur_j - 1] if j > 0 else 0))])
+                    cur_j = j + day_start
+                    max_images.append([(max_values_and_indices[0][cur_i][0], max_values_and_indices[0][cur_i][1]), (max_values_and_indices[1][cur_j][0], max_values_and_indices[1][cur_j][1])])
            
         # Sort the images by their similarity score
         max_images.sort(key=lambda img: -sum(s for s,_ in img))
     else:
         separator_ids = np.array([id.split(separator)[0] if dataset == 'LSC' else id.rpartition(separator)[0] for id in ids])
         splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
-        max_values_and_indices = []
+        split_points = np.r_[0, splits, len(separator_ids)]
         
+        max_values_and_indices = []
         for text_f in text_features:
             _, sim = get_cosine_ranking(text_f, data)
-            days = np.split(sim, splits)
-            max_values_and_indices.append([(arr.max(), arr.argmax()) for arr in days])
+            max_values_and_indices.append([
+                (sim[split_points[i]:split_points[i+1]].max(), sim[split_points[i]:split_points[i+1]].argmax() + split_points[i])
+                for i in range(len(split_points) - 1)
+            ])
 
-        max_images = [[(max_values_and_indices[i][j][0], max_values_and_indices[i][j][1] + (splits[j - 1] if j > 0 else 0)) for i in range(len(max_values_and_indices))] for j in range(len(max_values_and_indices[0]))]
+        max_images = [[(max_values_and_indices[i][j][0], max_values_and_indices[i][j][1]) for i in range(len(max_values_and_indices))] for j in range(len(max_values_and_indices[0]))]
         # Sort the images by their similarity score
         max_images.sort(key=lambda img: -sum(s for s,_ in img))
 

@@ -61,6 +61,8 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
             for file in files:
                 if "202001" in folder and file in ["16.hdf5", "17.hdf5", "18.hdf5"]:
                     continue
+                if "201901" in folder and file in ["1.hdf5"]:
+                    continue
                 # Join the folder and file name to create the full file path
                 file_path = os.path.join(folder, file)
                 # Append the file path to the list
@@ -123,6 +125,11 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
                 _, indices = similarity.topk(top_k)
                 labels.append(indices)
             labels = torch.stack(labels)
+            
+        sort_indices = np.argsort(ids)
+        ids = ids[sort_indices]
+        data = data[sort_indices]
+        labels = labels[sort_indices]
 
         # Store data and ids in memory
         DATA = memory_data_storage(data, ids, labels)
