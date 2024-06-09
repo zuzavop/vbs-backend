@@ -195,13 +195,6 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_i
     ids = db.get_ids()
     labels = db.get_labels()
     db_time = db.get_time()
-    
-    if selected_indices is not None:
-        data = data[selected_indices]
-        ids = ids[selected_indices]
-        labels = labels[selected_indices]
-        if db_time.shape[0] > 0:
-            db_time = db_time[selected_indices]
 
     # Get the video id and frame_id
     video_id, frame_id = db.uri_spliter(id, dataset)
@@ -209,6 +202,16 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_i
 
     # Find the index of the provided 'id' within the 'ids' array
     idx = np.where(ids == id.encode('utf-8'))[0][0]
+    
+    if selected_indices is not None:
+        if idx not in selected_indices:
+            selected_indices.append(idx)
+        data = data[selected_indices]
+        ids = ids[selected_indices]
+        labels = labels[selected_indices]
+        if db_time.shape[0] > 0:
+            db_time = db_time[selected_indices]
+    
     image_features = data[idx]
 
     # Calculate cosine distance between embedding and data and sort similarities
@@ -408,7 +411,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
     if is_life_log: 
         separator_ids = np.array([id[:11] for id in ids])
         splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
-        split_points = np.r_[0, splits, len(separator_ids)]
+        split_points = np.r_[0, splits, len(separator_ids) - 1]
         
         max_values_and_indices = []
         for text_f in text_features:
@@ -418,18 +421,27 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
                 for i in range(len(split_points) - 1)
             ])
             
-        day_splits = [i + 1 for i in range(len(splits) - 1) if separator_ids[splits[i]][:8] != separator_ids[splits[i + 1]][:8]]
-        days = np.split(splits, day_splits)
-                
+        day_splits = [i + 1 for i in range(len(split_points) - 2) if separator_ids[split_points[i]][:8] != separator_ids[split_points[i + 1]][:8]]
+        days = np.split(split_points, day_splits)
+        day_splits = np.r_[0, day_splits]
+
         max_images = []
         for d, day in enumerate(days):
-            day_start = 0 if d == 0 else day_splits[d - 1]
+            day_start = day_splits[d]
             indices = np.arange(day_start, day_start + len(day))
             combinations = list(combinations_with_replacement(indices, len(queries)))
             
+            sequences = []
             for combination in combinations:
-                max_images.append([(max_values_and_indices[q][combination[q]][0], max_values_and_indices[q][combination[q]][1]) for q in range(len(queries))])
-        
+                seq = [(max_values_and_indices[q][combination[q]][0], max_values_and_indices[q][combination[q]][1]) for q in range(len(queries)) if q < len(max_values_and_indices) and combination[q] < len(max_values_and_indices[q])]
+                images = [image.item() for _, image in seq]
+                if len(images) != len(set(images)):
+                    continue
+                sequences.append(seq)
+            if len(sequences) == 0:
+                continue
+            max_images.append(max(sequences, key=lambda x: sum(s for s, _ in x)))
+            
         # Sort the images by their similarity score
         max_images.sort(key=lambda img: -sum(s for s,_ in img))
     else:
@@ -504,6 +516,7 @@ def get_filter_indices(filter: dict, dataset: str):
     for column, value in filter.items():
         if column == "weekday" and isinstance(value, str):
             value = weekday_to_number(value)
+            filter_indices = metadata[metadata[column] == value].index.tolist()
         elif column == "id" and value.startswith("yyyymm"):
             value = value[6:]
             filter_indices = metadata[metadata[column].str.slice(6,8) == value].index.tolist()
@@ -515,7 +528,7 @@ def get_filter_indices(filter: dict, dataset: str):
             filter_indices = filter_indices1 + filter_indices2
             indices = list(set(indices) & set(filter_indices))
             continue
-        elif column == "hour" and value.contains("-"):
+        elif column == "hour" and "-" in value:
             value1, value2 = value.split("-")
             filter_indices = []
             for i in range(int(value1), int(value2)):
