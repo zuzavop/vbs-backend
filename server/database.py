@@ -116,8 +116,8 @@ def get_metadata(new_data=None):
 
 
 def name_splitter(dataset):
-    if dataset in ['MVK', 'VBSLHE']:
-        return '-'
+    if dataset in ['VBSLHE']:
+        return '_'
     else:
         return '_'
 
@@ -200,6 +200,9 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
                 get_metadata(DATA_COLLECTIONS[data_collection_name])
 
         if cur_dataset == dataset and cur_model == model:
+            file_path = cur_file
+            break
+        elif cur_dataset == dataset:
             file_path = cur_file
 
     if file_path:

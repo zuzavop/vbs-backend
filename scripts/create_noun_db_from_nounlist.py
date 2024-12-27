@@ -119,8 +119,8 @@ def load_clip_vit_webli(path):
             print(f'Noun list processed: {file_name}')
         else:
             print(f'Noun list already processed: {file_name}')
-            
-            
+
+
 def load_clip_vit_so400m(path):
     noun_lists = load_noun_lists(path)
     for noun_list in noun_lists:
@@ -134,6 +134,10 @@ def load_clip_vit_so400m(path):
             model, _, preprocess = open_clip.create_model_and_transforms(
             'ViT-SO400M-14-SigLIP-384',
             pretrained="webli")
+            current_directory = os.getcwd()
+            files = os.listdir(current_directory)
+            print(files)
+            print(current_directory)
             checkpoint_path = 'MCIP-ViT-SO400M-14-SigLIP-384.pth' #TODO: dowload this file
             mcip_state_dict = torch.load(checkpoint_path, map_location=torch.device('cpu'))
             model.load_state_dict(mcip_state_dict, strict=True)

@@ -73,11 +73,13 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                 # Extract video IDs and frame IDs from the database
                 ids = np.array(data.IDS).astype(str)
 
+                print(ids)
+
                 # Iterate over unique IDs, extracting corresponding timestamps from msb files
                 for id in tqdm(ids):
                     splits = id.split('-', 1)
                     if len(splits) < 2:
-                        splits = id.split('_', 1)
+                        splits = id.rsplit('_', 1)
                     video_id, frame_id = splits
                     msb_file = video_id + '.tsv'
 
@@ -106,6 +108,8 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                             if selected_time_stamps.empty:
                                 selected_time_stamps = df[df['id_visione'] == frame_id]
 
+                            print(selected_time_stamps)
+                            print(id)
                             # Append the extracted timestamps to the list
                             time_stamps.append(
                                 [

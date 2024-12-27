@@ -165,8 +165,9 @@ def load_vit_so400m():
         model, _, preprocess = open_clip.create_model_and_transforms(
             'ViT-SO400M-14-SigLIP-384',
             pretrained="webli")
-        checkpoint_path = 'MCIP-ViT-SO400M-14-SigLIP-384.pth' #TODO: dowload this file
-        mcip_state_dict = torch.load(checkpoint_path)
+
+        checkpoint_path = 'model/MCIP-ViT-SO400M-14-SigLIP-384.pth' #TODO: dowload this file
+        mcip_state_dict = torch.load(checkpoint_path, map_location=torch.device('cpu'))
         model.load_state_dict(mcip_state_dict, strict=True)
 
         tokenizer = open_clip.get_tokenizer('ViT-SO400M-14-SigLIP-384')
@@ -200,6 +201,7 @@ def embed_image_so400m(image):
     return image_features
 
 
+
 def embed_text(text, model):
     # Check if model is available
     if not model in available_models:
@@ -215,7 +217,7 @@ def embed_text(text, model):
         return embed_text_open_clip(text)
     elif 'clip-vit-so400m' in model:
         return embed_text_so400m(text)
-    
+
 
 def embed_image(image, model):
     # Check if model is available
@@ -232,7 +234,6 @@ def embed_image(image, model):
         return embed_image_open_clip(image)
     elif 'clip-vit-so400m' in model:
         return embed_image_so400m(image)
-    
 
 
 l.logger.info('Start to load pre-trained models')
