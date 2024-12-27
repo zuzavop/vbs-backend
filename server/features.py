@@ -16,6 +16,30 @@ import logger as l
 import models as m
 
 
+def normalize_vector(vector):
+    # Normalize the vector by dividing it by its norm
+    return vector / vector.norm(dim=-1, keepdim=True)
+
+
+def load_data(dataset, model, selected_indices=None):
+    # Load data from the database
+    db.load_features(dataset, model)
+    data = db.get_data()
+    ids = db.get_ids()
+    labels = db.get_labels()
+    db_time = db.get_time()
+    
+    # Filtered out data based on the selected indices
+    if selected_indices is not None:
+        data = data[selected_indices]
+        ids = ids[selected_indices]
+        labels = labels[selected_indices]
+        if db_time.shape[0] > 0:
+            db_time = db_time[selected_indices]
+    
+    return data, ids, labels, db_time
+
+
 def fallback_time_stamps(ids, dataset):
     # Initialize an empty list to store time stamps
     time_stamps = []
@@ -71,21 +95,10 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str, selec
     text_features = m.embed_text(query, model)
 
     # Normalize vector to make it smaller and for cosine calculcation
-    text_features = text_features / text_features.norm(dim=-1, keepdim=True)
-
-    # Load data
-    db.load_features(dataset, model)
-    data = db.get_data()
-    ids = db.get_ids()
-    labels = db.get_labels()
-    db_time = db.get_time()
+    text_features = normalize_vector(text_features)
     
-    if selected_indices is not None:
-        data = data[selected_indices]
-        ids = ids[selected_indices]
-        labels = labels[selected_indices]
-        if db_time.shape[0] > 0:
-            db_time = db_time[selected_indices]
+    # Load data
+    data, ids, labels, db_time = load_data(dataset, model, selected_indices)
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(text_features, data)
@@ -132,21 +145,10 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, se
     image_features = m.embed_image(image, model)
 
     # Normalize vector to make it smaller and for cosine calculcation
-    image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+    image_features = normalize_vector(image_features)
 
     # Load data
-    db.load_features(dataset, model)
-    data = db.get_data()
-    ids = db.get_ids()
-    labels = db.get_labels()
-    db_time = db.get_time()
-    
-    if selected_indices is not None:
-        data = data[selected_indices]
-        ids = ids[selected_indices]
-        labels = labels[selected_indices]
-        if db_time.shape[0] > 0:
-            db_time = db_time[selected_indices]
+    data, ids, labels, db_time = load_data(dataset, model, selected_indices)
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(image_features, data)
@@ -212,6 +214,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_i
         if db_time.shape[0] > 0:
             db_time = db_time[selected_indices]
     
+    idx = np.where(ids == id.encode('utf-8'))[0][0]
     image_features = data[idx]
 
     # Calculate cosine distance between embedding and data and sort similarities
@@ -392,27 +395,17 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
     text_features = [m.embed_text(q, model) for q in queries]
 
     # Normalize vector to make it smaller and for cosine calculcation
-    text_features = [text_feature / text_feature.norm(dim=-1, keepdim=True) for text_feature in text_features]
+    text_features = [normalize_vector(text_feature) for text_feature in text_features]
 
     # Load data
-    db.load_features(dataset, model)
-    data = db.get_data()
-    ids = db.get_ids()
-    labels = db.get_labels()
-    db_time = db.get_time()
-    
-    if selected_indices is not None:
-        data = data[selected_indices]
-        ids = ids[selected_indices]
-        labels = labels[selected_indices]
-        if db_time.shape[0] > 0:
-            db_time = db_time[selected_indices]
+    data, ids, labels, db_time = load_data(dataset, model, selected_indices)
         
     if is_life_log: 
+        # Split the IDs into the days
         separator_ids = np.array([id[:11] for id in ids])
-        splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
-        split_points = np.r_[0, splits, len(separator_ids) - 1]
+        split_points = np.r_[0, np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1, len(separator_ids) - 1]
         
+        # Get the maximum similarity and the index of the maximum similarity for each text feature
         max_values_and_indices = []
         for text_f in text_features:
             _, sim = get_cosine_ranking(text_f, data)
@@ -420,11 +413,13 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
                 (sim[split_points[i]:split_points[i+1]].max(), sim[split_points[i]:split_points[i+1]].argmax() + split_points[i])
                 for i in range(len(split_points) - 1)
             ])
-            
+        
+        # Split the days into hours
         day_splits = [i + 1 for i in range(len(split_points) - 2) if separator_ids[split_points[i]][:8] != separator_ids[split_points[i + 1]][:8]]
         days = np.split(split_points, day_splits)
         day_splits = np.r_[0, day_splits]
 
+        # Get the combinations of the indices for each day
         max_images = []
         for d, day in enumerate(days):
             day_start = day_splits[d]
@@ -445,10 +440,11 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
         # Sort the images by their similarity score
         max_images.sort(key=lambda img: -sum(s for s,_ in img))
     else:
+        # Split the IDs into the days
         separator_ids = np.array([id.split(separator)[0] if dataset == 'LSC' else id.rpartition(separator)[0] for id in ids])
-        splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
-        split_points = np.r_[0, splits, len(separator_ids)]
+        split_points = np.r_[0, np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1, len(separator_ids)]
         
+        # Get the maximum similarity and the index of the maximum similarity for each text feature
         max_values_and_indices = []
         for text_f in text_features:
             _, sim = get_cosine_ranking(text_f, data)
@@ -532,6 +528,7 @@ def get_filter_indices(filter: dict, dataset: str):
             value1, value2 = value.split("-")
             filter_indices = []
             for i in range(int(value1), int(value2)):
+                
                 filter_indices += metadata[metadata[column].str.startswith(str(i))].index.tolist()
             indices = list(set(indices) & set(filter_indices))
             continue
@@ -588,9 +585,106 @@ def get_filters(dataset: str):
     # Load metadata from the database
     db.load_features(dataset, 'clip-vit-webli')
     metadata = db.get_metadata()
-
-    # Get the list of available filters
-    filters = metadata.columns.tolist()
     
     # Return the list of available filters
-    return filters
+    return metadata.columns.tolist()
+
+
+def get_images_by_grid_text_query(query: str, k: int, dataset: str, model: str, selected_indices: list):
+    start_time = time.time()
+
+    # Tokenize query input and encode the data using the selected model
+    text_features = m.embed_text(query, model)
+
+    # Normalize vector to make it smaller and for cosine calculcation
+    text_features = normalize_vector(text_features)
+
+    # Load data
+    data, ids, labels, db_time = load_data(dataset, model, selected_indices)
+
+    # Calculate cosine distance between embedding and data and sort similarities
+    sorted_indices, similarities = get_cosine_ranking(text_features, data)
+    sorted_indices = sorted_indices[:k]
+
+    # If settings multiply and change to integer
+    selected_data = data[sorted_indices]
+    if c.BASE_MULTIPLICATION:
+        selected_data = (selected_data * c.BASE_MULTIPLIER).int()
+
+    # Get the time stamps for the sliced IDs
+    db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
+
+    # Give only back the k most similar embeddings
+    most_similar_samples = list(
+        zip(
+            ids[sorted_indices].tolist(),
+            [i for i in range(len(sorted_indices))],
+            similarities[sorted_indices].tolist(),
+            selected_data.tolist(),
+            labels[sorted_indices].tolist(),
+            db_time.tolist(),
+        )
+    )
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
+
+    del data
+    del ids
+    del labels
+    del db_time
+    del similarities
+    del sorted_indices
+
+    # Return a list of (ID, rank, score, feature, label, time) tuples
+    return most_similar_samples
+
+
+def get_images_by_grid_image_query(image: Image, k: int, dataset: str, model: str, selected_indices: list):
+    start_time = time.time()
+
+    # Preprocess query input and encode the data using the selected model
+    image_features = m.embed_image(image, model)
+
+    # Normalize vector to make it smaller and for cosine calculcation
+    image_features = normalize_vector(image_features)
+
+    # Load data
+    data, ids, labels, db_time = load_data(dataset, model, selected_indices)
+
+    # Calculate cosine distance between embedding and data and sort similarities
+    sorted_indices, similarities = get_cosine_ranking(image_features, data)
+    sorted_indices = sorted_indices[:k]
+
+    # If settings multiply and change to integer
+    selected_data = data[sorted_indices]
+    if c.BASE_MULTIPLICATION:
+        selected_data = (selected_data * c.BASE_MULTIPLIER).int()
+
+    # Get the time stamps for the sliced IDs
+    db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
+
+    # Give only back the k most similar embeddings
+    most_similar_samples = list(
+        zip(
+            ids[sorted_indices].tolist(),
+            [i for i in range(len(sorted_indices))],
+            similarities[sorted_indices].tolist(),
+            selected_data.tolist(),
+            labels[sorted_indices].tolist(),
+            db_time.tolist(),
+        )
+    )
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
+
+    del data
+    del ids
+    del labels
+    del db_time
+    del similarities
+    del sorted_indices
+
+    # Return a list of (ID, rank, score, feature, label, time) tuples
+    return most_similar_samples

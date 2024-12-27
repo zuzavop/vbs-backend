@@ -120,7 +120,12 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
         labels = []
         for label_embedding in label_embeddings:
             label_embeds = torch.load(label_embedding)
+            print(label_embeds.shape)
+            print(label_embeds.type())
+            print(label_embeds)
             for image in data:
+                print(image.shape)
+                print(image)
                 similarity = 100.0 * image @ label_embeds.T
                 _, indices = similarity.topk(top_k)
                 labels.append(indices)

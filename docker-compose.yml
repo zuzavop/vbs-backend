@@ -16,6 +16,7 @@ services:
       - "80:80"
     volumes:
       - ./server:/app  # Mount the local app directory to /app in the container
+      - ./model:/app/model
       - "${DATA_PATH}:/data/vbs/"
     depends_on:
       preprocess:

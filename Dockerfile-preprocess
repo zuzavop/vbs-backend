@@ -16,5 +16,8 @@ RUN pip install --trusted-host pypi.python.org -r requirements.txt
 # Copy the preprocess code into the container
 COPY ./scripts /preprocess/
 
+#Copy the model into the container
+COPY ./preprocess_model /preprocess/
+
 # Start the preprocessing
 CMD ["bash", "./preprocess.bash"]

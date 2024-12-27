@@ -277,8 +277,85 @@ async def text_query(query_params: dict):
         return attachment_response_creator(ret_dict)
     else:
         return json_response_creator(ret_dict)
+    
+
+# Define the 'gridTextQuery' route
+@app.post('/gridTextQuery/')
+async def grid_text_query(query_params: dict):
+    '''
+    Get a list of images based on a text query.
+    '''
+    start_time = time.time()
+    l.logger.info(query_params)
+    
+    query = query_params.get('query', '')
+    k = min(query_params.get('k', c.BASE_K), 10000)
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    model = query_params.get('model', c.BASE_MODEL)
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    filter = query_params.get('filters', {})
+    
+    if filter == {}:
+        selected_indeces = None
+    else:
+        selected_indeces = fs.get_filter_indices(filter, dataset)
+
+    # Call the function to retrieve images
+    images = fs.get_images_by_grid_text_query(query, k, dataset, model, selected_indeces)
+
+    # Create return dictionary
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/textQuery: {execution_time:.6f} secs')
+
+    if download_speed_up:
+        return attachment_response_creator(ret_dict)
+    else:
+        return json_response_creator(ret_dict)
+    
+
+# Define the 'gridImageQuery' route
+@app.post('/gridImageQuery/')
+async def grid_image_query(query_params: dict):
+    '''
+    Get a list of images based on an image query.
+    '''
+    start_time = time.time()
+    l.logger.info(query_params)
+    
+    # TODO
+    k = min(query_params.get('k', c.BASE_K), 10000)
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    model = query_params.get('model', c.BASE_MODEL)
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    filter = query_params.get('filters', {})
+    
+    if filter == {}:
+        selected_indeces = None
+    else:
+        selected_indeces = fs.get_filter_indices(filter, dataset)
+
+    # Call the function to retrieve images
+    images = fs.get_images_by_grid_image_query(k, dataset, model, selected_indeces)
+
+    # Create return dictionary
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/textQuery: {execution_time:.6f} secs')
+
+    if download_speed_up:
+        return attachment_response_creator(ret_dict)
+    else:
+        return json_response_creator(ret_dict)
 
 
+# Define the 'filter' route
 @app.post('/filter/')
 async def filter(query_params: dict):
     '''
@@ -343,8 +420,40 @@ async def get_video_frames(query_params: dict):
         return attachment_response_creator(ret_dict)
     else:
         return json_response_creator(ret_dict)
+    
+    
+# Define the 'getVideo' route
+@app.post('/getVideo/')
+async def get_video(query_params: dict):
+    '''
+    Get a list of video images based on a video ID.
+    '''
+    start_time = time.time()
+    l.logger.info(query_params)
+
+    video_id = query_params.get('video_id', '')
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    model = query_params.get('model', c.BASE_MODEL)
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+
+    # Call the function to retrieve video images
+    images = fs.get_video_images(video_id, dataset, model)
+
+    # Create return dictionary
+    ret_dict = generate_min_return_dictionary(images, dataset, add_features, max_labels)
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/getVideo: {execution_time:.6f} secs')
+
+    if download_speed_up:
+        return attachment_response_creator(ret_dict)
+    else:
+        return json_response_creator(ret_dict)
 
 
+# Define the 'getFilters' route
 @app.get('/getFilters/')
 async def get_filters(dataset: str):
     '''

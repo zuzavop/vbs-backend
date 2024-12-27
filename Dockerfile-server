@@ -19,6 +19,9 @@ COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
 # Copy the rest of the application code into the container
 COPY ./server /app/
 
+# Copy model into the container
+COPY ./model /app/model/
+
 # Expose port 80 for Nginx
 EXPOSE 80
 

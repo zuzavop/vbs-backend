@@ -3,6 +3,7 @@
 import time
 
 import open_clip
+import torch
 
 from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 
@@ -11,7 +12,7 @@ import configs as c
 
 
 # List available models
-available_models = ['clip-laion', 'clip-openai', 'clip-vit-webli']
+available_models = ['clip-laion', 'clip-openai', 'clip-vit-webli', 'clip-vit-so400m']
 
 
 # Store in memory as long as possible
@@ -155,6 +156,50 @@ def embed_image_webli(image):
     return image_features
 
 
+def load_vit_so400m():
+    global cur_model_sel
+    global cur_model
+
+    if cur_model_sel != 'clip-vit-new':
+        # Load model and tokenizer via open clip
+        model, _, preprocess = open_clip.create_model_and_transforms(
+            'ViT-SO400M-14-SigLIP-384',
+            pretrained="webli")
+        checkpoint_path = 'MCIP-ViT-SO400M-14-SigLIP-384.pth' #TODO: dowload this file
+        mcip_state_dict = torch.load(checkpoint_path)
+        model.load_state_dict(mcip_state_dict, strict=True)
+
+        tokenizer = open_clip.get_tokenizer('ViT-SO400M-14-SigLIP-384')
+
+        cur_model_sel = 'clip-vit-new'
+        cur_model = (model, tokenizer, preprocess)
+
+    else:
+        model, tokenizer, preprocess = cur_model
+
+    return model, tokenizer, preprocess
+
+
+# Embed text using webli
+def embed_text_so400m(text):
+    model, tokenizer, _ = load_vit_so400m()
+
+    query_tokens = tokenizer(text)
+    text_features = model.encode_text(query_tokens).detach().cpu().flatten()
+
+    return text_features
+
+
+# Embed image using webli
+def embed_image_so400m(image):
+    model, _, preprocess = load_vit_so400m()
+
+    query_image = preprocess(image).unsqueeze(0)
+    image_features = model.encode_image(query_image).detach().cpu().flatten()
+
+    return image_features
+
+
 def embed_text(text, model):
     # Check if model is available
     if not model in available_models:
@@ -168,6 +213,8 @@ def embed_text(text, model):
     # If the model is 'clip-openai', call the function for OpenAI's CLIP model
     elif 'clip-openai' in model:
         return embed_text_open_clip(text)
+    elif 'clip-vit-so400m' in model:
+        return embed_text_so400m(text)
     
 
 def embed_image(image, model):
@@ -183,6 +230,8 @@ def embed_image(image, model):
     # If the model is 'clip-openai', call the function for OpenAI's CLIP model
     elif 'clip-openai' in model:
         return embed_image_open_clip(image)
+    elif 'clip-vit-so400m' in model:
+        return embed_image_so400m(image)
     
 
 

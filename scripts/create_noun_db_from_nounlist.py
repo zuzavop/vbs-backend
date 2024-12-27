@@ -119,6 +119,38 @@ def load_clip_vit_webli(path):
             print(f'Noun list processed: {file_name}')
         else:
             print(f'Noun list already processed: {file_name}')
+            
+            
+def load_clip_vit_so400m(path):
+    noun_lists = load_noun_lists(path)
+    for noun_list in noun_lists:
+        file_name, noun_list = noun_list
+        result_path = os.path.join(path, f'{file_name[:-4]}-clip-vit-so400m.ptt')
+
+        if not os.path.exists(result_path):
+            print(f'Process noun list: {file_name}')
+
+            # Load model and tokenizer via open clip
+            model, _, preprocess = open_clip.create_model_and_transforms(
+            'ViT-SO400M-14-SigLIP-384',
+            pretrained="webli")
+            checkpoint_path = 'MCIP-ViT-SO400M-14-SigLIP-384.pth' #TODO: dowload this file
+            mcip_state_dict = torch.load(checkpoint_path, map_location=torch.device('cpu'))
+            model.load_state_dict(mcip_state_dict, strict=True)
+
+            tokenizer = open_clip.get_tokenizer('ViT-SO400M-14-SigLIP-384')
+
+            tokenized_noun_list = [tokenizer(f'a photo of {n}') for n in noun_list]
+            cat_tokenized_noun_list = torch.cat(tokenized_noun_list)
+            with torch.no_grad():
+                embedded_noun_list = model.encode_text(cat_tokenized_noun_list)
+            norm_embedded_noun_list = normalize(embedded_noun_list)
+
+            torch.save(norm_embedded_noun_list, result_path)
+
+            print(f'Noun list processed: {file_name}')
+        else:
+            print(f'Noun list already processed: {file_name}')
 
 
 if __name__ == '__main__':
@@ -144,3 +176,6 @@ if __name__ == '__main__':
         load_open_clip(base_data_dir)
     if 'clip-vit-webli' in model_name:
         load_clip_vit_webli(base_data_dir)
+    if 'clip-vit-so400m' in model_name:
+        load_clip_vit_so400m(base_data_dir)
+
