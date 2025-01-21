@@ -51,6 +51,8 @@ def fallback_time_stamps(ids, dataset):
 
         # Split the ID into two parts using a custom function (db.name_splitter) and get the second part
         _, frame_id = id.split(db.name_splitter(dataset), 1)
+        if dataset == "MVK":
+            frame_id = id.split("_")[-1]
 
         # Calculate the middle time based on the frame ID, assuming a frame rate of 30 frames per second
         middle_time = float(frame_id) / 30 * 1000
@@ -77,12 +79,18 @@ def get_time_stamps(db_time, slicing, ids, dataset):
     return db_time
 
 
-def get_cosine_ranking(query_vector, matrix):
+def get_cosine_ranking(query_vector, matrix, top_k = -1):
+    query_vector = query_vector.to(matrix.dtype)
+    
+    num_samples = matrix.shape[0]
+    if top_k == -1 or top_k > num_samples:
+        top_k = num_samples
+    
     # Get the dot product for every entry
     dot_product = torch.matmul(query_vector, matrix.T)
-
-    # Sort for the indices of the nearest neighbors
-    nearest_neighbors = torch.argsort(-dot_product)
+    
+    # Sort the concatenated results to get the top k most similar samples
+    _, nearest_neighbors = torch.topk(dot_product, top_k, dim=-1)
 
     # Give back nearest neigbor sortings and distances
     return nearest_neighbors, dot_product
@@ -101,8 +109,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str, selec
     data, ids, labels, db_time = load_data(dataset, model, selected_indices)
 
     # Calculate cosine distance between embedding and data and sort similarities
-    sorted_indices, similarities = get_cosine_ranking(text_features, data)
-    sorted_indices = sorted_indices[:k]
+    sorted_indices, similarities = get_cosine_ranking(text_features, data, top_k=k)
 
     # If settings multiply and change to integer
     selected_data = data[sorted_indices]
@@ -151,8 +158,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, se
     data, ids, labels, db_time = load_data(dataset, model, selected_indices)
 
     # Calculate cosine distance between embedding and data and sort similarities
-    sorted_indices, similarities = get_cosine_ranking(image_features, data)
-    sorted_indices = sorted_indices[:k]
+    sorted_indices, similarities = get_cosine_ranking(image_features, data, top_k=k)
 
     # If settings multiply and change to integer
     selected_data = data[sorted_indices]
@@ -218,8 +224,7 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_i
     image_features = data[idx]
 
     # Calculate cosine distance between embedding and data and sort similarities
-    sorted_indices, similarities = get_cosine_ranking(image_features, data)
-    sorted_indices = sorted_indices[:k]
+    sorted_indices, similarities = get_cosine_ranking(image_features, data, top_k=k)
 
     # If settings multiply and change to integer
     selected_data = data[sorted_indices]
@@ -385,10 +390,10 @@ def get_random_video_frame(dataset: str, model: str):
     return video_images
 
 
-def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, is_life_log: bool, selected_indices: list):
+def get_images_by_temporal_query(query: str, query2: str, k: int, dataset: str, model: str, is_life_log: bool, selected_indices: list):
     start_time = time.time()
     
-    queries = query.split(">")
+    queries = [query, query2]
     separator = db.name_splitter(dataset).encode()
 
     # Tokenize query input and encode the data using the selected model
@@ -409,6 +414,7 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
         max_values_and_indices = []
         for text_f in text_features:
             _, sim = get_cosine_ranking(text_f, data)
+            sim = sim.numpy()
             max_values_and_indices.append([
                 (sim[split_points[i]:split_points[i+1]].max(), sim[split_points[i]:split_points[i+1]].argmax() + split_points[i])
                 for i in range(len(split_points) - 1)
@@ -440,14 +446,13 @@ def get_images_by_temporal_query(query: str, k: int, dataset: str, model: str, i
         # Sort the images by their similarity score
         max_images.sort(key=lambda img: -sum(s for s,_ in img))
     else:
-        # Split the IDs into the days
-        separator_ids = np.array([id.split(separator)[0] if dataset == 'LSC' else id.rpartition(separator)[0] for id in ids])
-        split_points = np.r_[0, np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1, len(separator_ids)]
+        split_points = db.get_splits()
         
         # Get the maximum similarity and the index of the maximum similarity for each text feature
         max_values_and_indices = []
         for text_f in text_features:
             _, sim = get_cosine_ranking(text_f, data)
+            sim = sim.numpy()
             max_values_and_indices.append([
                 (sim[split_points[i]:split_points[i+1]].max(), sim[split_points[i]:split_points[i+1]].argmax() + split_points[i])
                 for i in range(len(split_points) - 1)
@@ -528,8 +533,7 @@ def get_filter_indices(filter: dict, dataset: str):
             value1, value2 = value.split("-")
             filter_indices = []
             for i in range(int(value1), int(value2)):
-                
-                filter_indices += metadata[metadata[column].str.startswith(str(i))].index.tolist()
+                filter_indices += metadata[metadata[column].str.startswith(str(i).zfill(2))].index.tolist()
             indices = list(set(indices) & set(filter_indices))
             continue
         elif column == 'id':

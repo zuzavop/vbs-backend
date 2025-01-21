@@ -4,6 +4,8 @@ import time
 import json
 import logging
 
+import numpy as np
+
 from PIL import Image
 from io import BytesIO
 
@@ -29,7 +31,7 @@ app.add_middleware(
 )
 
 # Load features into the database
-db.load_features()
+db.load_features(c.BASE_DATASET, c.BASE_MODEL, True)
 
 
 class RoundingFloat(float):
@@ -66,7 +68,7 @@ def generate_min_return_dictionary(images, dataset, add_features=True, max_label
             features = []
 
         ids = ids.decode('utf-8')
-        video_id, frame_id = ids.split(db.name_splitter(dataset), 1)
+        video_id, frame_id = db.uri_spliter(ids, dataset)
         ids = ids.replace('-', '_')
 
         if isinstance(labels, list):
@@ -91,7 +93,7 @@ def generate_return_dictionary(images, dataset, add_features=True, max_labels=10
             features = []
 
         ids = ids.decode('utf-8')
-        video_id, frame_id = ids.split(db.name_splitter(dataset), 1)
+        video_id, frame_id = db.uri_spliter(ids, dataset)
         ids = ids.replace('-', '_')
 
         if isinstance(labels, list):
@@ -250,6 +252,7 @@ async def text_query(query_params: dict):
     l.logger.info(query_params)
 
     query = query_params.get('query', '')
+    query2 = query_params.get('query2', '')
     k = min(query_params.get('k', c.BASE_K), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
@@ -265,7 +268,7 @@ async def text_query(query_params: dict):
         selected_indeces = fs.get_filter_indices(filter, dataset)
 
     # Call the function to retrieve images
-    images = fs.get_images_by_temporal_query(query, k, dataset, model, is_life_logging, selected_indeces)
+    images = fs.get_images_by_temporal_query(query, query2, k, dataset, model, is_life_logging, selected_indeces)
 
     # Create return dictionary
     ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)

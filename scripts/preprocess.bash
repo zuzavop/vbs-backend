@@ -5,7 +5,7 @@ directory_path="/data/vbs"
 echo "Data directory: $directory_path"
 
 # Define an array
-my_array=("clip-laion" "clip-vit-webli") # "clip-laion" "clip-openai" "aladin"
+my_array=("clip-laion" "clip-vit-webli" "clip-vit-so400m")
 
 
 # Check if the directory exists
@@ -13,7 +13,14 @@ if [ -d "$directory_path" ]; then
   # Use a for loop to iterate through subdirectories
   for subdirectory in "$directory_path"/*; do
 
-    if [ "$subdirectory" == "images" ]; then
+    # Extract the base name of the subdirectory
+    subdirectory_name=$(basename "$subdirectory")
+    if [ "$subdirectory_name" == "images" ]; then
+        # Continue with the loop
+        continue
+    fi
+
+    if [ "$subdirectory_name" == "videos" ]; then
         # Continue with the loop
         continue
     fi
@@ -59,9 +66,14 @@ if [ -d "$directory_path" ]; then
       # Check for *.tar.gz file with 'msb' in the name
       tar_file=$(find "$subdirectory" -type f -name "msb.tar.gz")
       if [ -n "$tar_file" ]; then
-          # Extract the tar.gz file
-          tar -xzf "$tar_file"
-          echo "Found *.tar.gz file with 'msb' in the name: $tar_file"
+          # Check if the msb directory already exists
+          if [ ! -d "$subdirectory/msb" ]; then
+            # Extract the tar.gz file
+            tar -xzf "$tar_file"
+            echo "Found *.tar.gz file with 'msb' in the name: $tar_file"
+          else
+            echo "msb directory already exists, skipping extraction of $tar_file"
+          fi
       fi
 
       # Check for a directory with 'msb' in the name and *.tsv files

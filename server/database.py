@@ -24,6 +24,7 @@ DATA_COLLECTIONS = {}
 TIME_COLLECTIONS = {}
 METADATA_COLLECTIONS = {}
 CUR_SELECTION = None
+SPLITS_COLLECTIONS = {}
 
 
 # Class structure to store data, indices, labels, and the time
@@ -60,6 +61,11 @@ def get_labels():
     if isinstance(DATA.LABELS, list):
         return torch.tensor([-1] * len(DATA.IDS))
     return DATA.LABELS
+
+
+def get_splits():
+    data_collection_name = f'{CUR_SELECTION[0]}-{CUR_SELECTION[1]}'
+    return SPLITS_COLLECTIONS[data_collection_name]
 
 
 def get_time(new_data=None):
@@ -116,10 +122,7 @@ def get_metadata(new_data=None):
 
 
 def name_splitter(dataset):
-    if dataset in ['MVK', 'VBSLHE']:
-        return '-'
-    else:
-        return '_'
+    return '_'
 
 
 def uri_spliter(id, dataset):
@@ -134,7 +137,7 @@ def set_data(new_data=None, new_ids=None, new_labels=None):
     DATA = memory_data_storage(new_data, new_ids, new_labels)
 
 
-def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
+def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL, first_load=False):
     global DATA
     global DATA_COLLECTIONS
     global CUR_SELECTION
@@ -180,7 +183,7 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     # Get sizes of all datasets
     full_sizes = 0
     available_mem = get_available_memory()
-    l.logger.info(available_mem)
+    l.logger.info(f'Available memory: {available_mem}')
 
     # Check available models and datasets
     file_path = None
@@ -198,8 +201,25 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
                 DATA_COLLECTIONS[data_collection_name] = dill.load(f)
                 get_time(DATA_COLLECTIONS[data_collection_name])
                 get_metadata(DATA_COLLECTIONS[data_collection_name])
+                
+            # Convert data to torch.float32
+            try:
+                data_tensor = DATA_COLLECTIONS[data_collection_name].DATA
+                DATA_COLLECTIONS[data_collection_name].DATA = data_tensor.to(torch.float32)
+                
+                separator = name_splitter(cur_dataset).encode()
+                separator_ids = np.array([id.split(separator)[0] if cur_dataset == 'LSC' else id.rpartition(separator)[0] for id in DATA_COLLECTIONS[data_collection_name].IDS])
+                splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
+                SPLITS_COLLECTIONS[data_collection_name] = np.r_[0, splits, len(separator_ids)]
+            except Exception as e:
+                l.logger.error(f"Error converting data to torch.float32: {e}")
+                raise
 
         if cur_dataset == dataset and cur_model == model:
+            file_path = cur_file
+            if not first_load:
+                break
+        elif cur_dataset == dataset:
             file_path = cur_file
 
     if file_path:
