@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 directory_path="/data/vbs"
 echo "Data directory: $directory_path"
 

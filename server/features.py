@@ -80,6 +80,7 @@ def get_time_stamps(db_time, slicing, ids, dataset):
 
 
 def get_cosine_ranking(query_vector, matrix, top_k = -1):
+    # Ensure the query vector has the same data type as the matrix
     query_vector = query_vector.to(matrix.dtype)
     
     num_samples = matrix.shape[0]
@@ -89,10 +90,10 @@ def get_cosine_ranking(query_vector, matrix, top_k = -1):
     # Get the dot product for every entry
     dot_product = torch.matmul(query_vector, matrix.T)
     
-    # Sort the concatenated results to get the top k most similar samples
+    # Get the indices of the top_k most similar vectors
     _, nearest_neighbors = torch.topk(dot_product, top_k, dim=-1)
 
-    # Give back nearest neigbor sortings and distances
+    # Return the indices of the top_k most similar vectors and their similarity scores
     return nearest_neighbors, dot_product
 
 
@@ -501,13 +502,53 @@ def get_images_by_temporal_query(query: str, query2: str, k: int, dataset: str, 
 
 
 def weekday_to_number(weekday):
-    weekdays = {"Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3, "Friday": 4, "Saturday": 5, "Sunday": 6, "0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6}
+    weekdays = {
+        "Monday": 0, "Mon": 0, "Mo": 0,
+        "Tuesday": 1, "Tue": 1, "Tu": 1,
+        "Wednesday": 2, "Wed": 2, "We": 2,
+        "Thursday": 3, "Thu": 3, "Th": 3,
+        "Friday": 4, "Fri": 4, "Fr": 4,
+        "Saturday": 5, "Sat": 5, "Sa": 5,
+        "Sunday": 6, "Sun": 6, "Su": 6,
+        "0": 0, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6
+    }
     return weekdays.get(weekday, -1)
+
+
+def apply_weekday_filter(metadata, column, value):
+    value = weekday_to_number(value)
+    return metadata[metadata[column] == value].index.tolist()
+
+
+def apply_id_filter(metadata, column, value):
+    if value.startswith("yyyymm"):
+        value = value[6:]
+        return metadata[metadata[column].str.slice(6, 8) == value].index.tolist()
+    elif value.startswith("yyyy"):
+        value1 = value.replace("yyyy", "2019")
+        filter_indices1 = metadata[metadata[column].str.startswith(value1)].index.tolist()
+        value2 = value.replace("yyyy", "2020")
+        filter_indices2 = metadata[metadata[column].str.startswith(value2)].index.tolist()
+        return filter_indices1 + filter_indices2
+    else:
+        return metadata[metadata[column].str.startswith(value)].index.tolist()
+    
+
+def apply_hour_filter(metadata, column, value):
+    value1, value2 = value.split("-")
+    filter_indices = []
+    for i in range(int(value1), int(value2)):
+        filter_indices += metadata[metadata[column].str.startswith(str(i).zfill(2))].index.tolist()
+    return filter_indices
+
+
+def apply_generic_filter(metadata, column, value):
+    return metadata[metadata[column].str.contains(value, case=False)].index.tolist()
 
 
 def get_filter_indices(filter: dict, dataset: str):
     # Load metadata from the database
-    db.load_features(dataset, 'clip-vit-webli')
+    db.load_features(dataset)
     metadata = db.get_metadata()
     
     # Initialize indices with all indices in metadata
@@ -516,28 +557,11 @@ def get_filter_indices(filter: dict, dataset: str):
     # Iterate over the filter dictionary and apply each filter
     for column, value in filter.items():
         if column == "weekday" and isinstance(value, str):
-            value = weekday_to_number(value)
-            filter_indices = metadata[metadata[column] == value].index.tolist()
-        elif column == "id" and value.startswith("yyyymm"):
-            value = value[6:]
-            filter_indices = metadata[metadata[column].str.slice(6,8) == value].index.tolist()
-        elif column == "id" and value.startswith("yyyy"):
-            value1 = value.replace("yyyy", "2019")
-            filter_indices1 = metadata[metadata[column].str.startswith(value1)].index.tolist()
-            value2 = value.replace("yyyy", "2020")
-            filter_indices2 = metadata[metadata[column].str.startswith(value2)].index.tolist()
-            filter_indices = filter_indices1 + filter_indices2
-            indices = list(set(indices) & set(filter_indices))
-            continue
+            filter_indices = apply_weekday_filter(metadata, column, value)
+        elif column == "id":
+            filter_indices = apply_id_filter(metadata, column, value)
         elif column == "hour" and "-" in value:
-            value1, value2 = value.split("-")
-            filter_indices = []
-            for i in range(int(value1), int(value2)):
-                filter_indices += metadata[metadata[column].str.startswith(str(i).zfill(2))].index.tolist()
-            indices = list(set(indices) & set(filter_indices))
-            continue
-        elif column == 'id':
-            filter_indices = metadata[metadata[column].str.startswith(value)].index.tolist()
+            filter_indices = apply_hour_filter(metadata, column, value)
         elif column == "weekday":
             filter_indices = metadata[metadata[column] == value].index.tolist()
         else:
@@ -551,7 +575,7 @@ def get_filter_indices(filter: dict, dataset: str):
 
 def filter_metadata(filter: dict, k: int, dataset: str):
     # Load metadata from the database
-    db.load_features(dataset, 'clip-vit-webli')
+    db.load_features(dataset)
     ids = db.get_ids()
     data = db.get_data()
     labels = db.get_labels()
@@ -587,108 +611,8 @@ def filter_metadata(filter: dict, k: int, dataset: str):
 
 def get_filters(dataset: str):
     # Load metadata from the database
-    db.load_features(dataset, 'clip-vit-webli')
+    db.load_features(dataset)
     metadata = db.get_metadata()
     
     # Return the list of available filters
     return metadata.columns.tolist()
-
-
-def get_images_by_grid_text_query(query: str, k: int, dataset: str, model: str, selected_indices: list):
-    start_time = time.time()
-
-    # Tokenize query input and encode the data using the selected model
-    text_features = m.embed_text(query, model)
-
-    # Normalize vector to make it smaller and for cosine calculcation
-    text_features = normalize_vector(text_features)
-
-    # Load data
-    data, ids, labels, db_time = load_data(dataset, model, selected_indices)
-
-    # Calculate cosine distance between embedding and data and sort similarities
-    sorted_indices, similarities = get_cosine_ranking(text_features, data)
-    sorted_indices = sorted_indices[:k]
-
-    # If settings multiply and change to integer
-    selected_data = data[sorted_indices]
-    if c.BASE_MULTIPLICATION:
-        selected_data = (selected_data * c.BASE_MULTIPLIER).int()
-
-    # Get the time stamps for the sliced IDs
-    db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
-
-    # Give only back the k most similar embeddings
-    most_similar_samples = list(
-        zip(
-            ids[sorted_indices].tolist(),
-            [i for i in range(len(sorted_indices))],
-            similarities[sorted_indices].tolist(),
-            selected_data.tolist(),
-            labels[sorted_indices].tolist(),
-            db_time.tolist(),
-        )
-    )
-
-    execution_time = time.time() - start_time
-    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
-
-    del data
-    del ids
-    del labels
-    del db_time
-    del similarities
-    del sorted_indices
-
-    # Return a list of (ID, rank, score, feature, label, time) tuples
-    return most_similar_samples
-
-
-def get_images_by_grid_image_query(image: Image, k: int, dataset: str, model: str, selected_indices: list):
-    start_time = time.time()
-
-    # Preprocess query input and encode the data using the selected model
-    image_features = m.embed_image(image, model)
-
-    # Normalize vector to make it smaller and for cosine calculcation
-    image_features = normalize_vector(image_features)
-
-    # Load data
-    data, ids, labels, db_time = load_data(dataset, model, selected_indices)
-
-    # Calculate cosine distance between embedding and data and sort similarities
-    sorted_indices, similarities = get_cosine_ranking(image_features, data)
-    sorted_indices = sorted_indices[:k]
-
-    # If settings multiply and change to integer
-    selected_data = data[sorted_indices]
-    if c.BASE_MULTIPLICATION:
-        selected_data = (selected_data * c.BASE_MULTIPLIER).int()
-
-    # Get the time stamps for the sliced IDs
-    db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
-
-    # Give only back the k most similar embeddings
-    most_similar_samples = list(
-        zip(
-            ids[sorted_indices].tolist(),
-            [i for i in range(len(sorted_indices))],
-            similarities[sorted_indices].tolist(),
-            selected_data.tolist(),
-            labels[sorted_indices].tolist(),
-            db_time.tolist(),
-        )
-    )
-
-    execution_time = time.time() - start_time
-    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
-
-    del data
-    del ids
-    del labels
-    del db_time
-    del similarities
-    del sorted_indices
-
-    # Return a list of (ID, rank, score, feature, label, time) tuples
-    return most_similar_samples
