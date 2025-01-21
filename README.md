@@ -17,6 +17,7 @@ There are different types of queries:
 
  - **Known-Item Search (KIS):** a single video clip (20 secs long) is randomly selected from the dataset and visually presented with the projector on-site. The participants need to find exactly the single instance presented. Another task variation of this kind is textual KIS, where instead of a visual presentation, the searched segment is described only by text given by the moderator (and presented as text via the projector).
  - **Ad-hoc Video Search (AVS):** here, a rather general description of many shots is presented by the moderator (e.g., „Find all shots showing cars in front of trees“) and the  participants need to find as many correct examples (instances) according to the description.
+ - **Question-Answering (QA):** the participants need to answer a question about the content of the video dataset. The questions are usually of the form „Which color has the object in the video, which was shown?“ or „What was written on the sign in the video?“.
 Each query has a time limit (e.g., 5-7 minutes) and is rewarded on success with a score that depends on several factors: the required search time, the number of false submissions (which are penalized), and the number of different instances found for AVS tasks. For the latter case it is also considered, how many different ‚ranges‚ were submitted for an AVS tasks. For example, many different but temporally close shots in the same video count much less than several different shots from different videos.
 
 ## Table of Contents
@@ -31,6 +32,8 @@ Each query has a time limit (e.g., 5-7 minutes) and is rewarded on success with 
     - [Text Query](#text-query)
     - [Image Query](#image-query)
     - [Get Video Image](#get-video-image)
+    - [Temporal Query](#temporal-query)
+    - [Filter](#filter)
   - [Running Tests](#running-tests)
   - [Possible Datasets](#possible-datasets)
   - [License](#license)
@@ -43,7 +46,9 @@ However, in general it is a RESTAPI with the following endpoints:
 /textQuery/  
 /imageQuery/  
 /imageQueryByID/  
-/getVideoImages/  
+/getVideoImages/
+/temporalQuery/
+/filter/
 
 ## Prerequisites
 
@@ -86,6 +91,8 @@ cd vbs-backend
 # Use docker-compose
 docker-compose up --build
 ```
+
+If new model like `ViT-SO400M-14-SigLIP-384` will be used, you need to download it first and add it to the `model` folder.
 
 
 ## API Documentation
@@ -195,6 +202,95 @@ See `tests\test_getVideoImage.sh` for an example.
   "frame_id": "YourFrameIDHere",
   "video_image": "image_data_here"
 }
+```
+
+### Temporal Query
+
+**Endpoint:** `/temporalQuery/`
+
+**Method:** POST
+
+**Description:** Accepts a JSON object with a temporal query and optional parameters. It retrieves a list of images based on the temporal query.
+
+**Request Body Example:**
+```json
+{
+  "query": "Your First Part of Text Query Here",
+  "query2": "Your Second Part od Text Query Here",
+  "k": 5,
+  "dataset": "Dataset Name",
+  "model": "Model Name",
+  "add_features": false,
+  "speed_up": true,
+}
+```
+
+**Response Example:**
+```json
+[
+  {
+    "uri": "image_uri",
+    "rank": 1,
+    "score": 0.95,
+    "id": ["video_id", "frame_id"],
+    "features": [0.1, 0.2, 0.3],
+    "label": [5, 10, 2, 3, 1],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  },
+  {
+    "uri": "another_image_uri",
+    "rank": 2,
+    "score": 0.92,
+    "id": ["video_id", "frame_id"],
+    "features": [0.2, 0.3, 0.4],
+    "label": [7, 4, 3, 9, 10],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  }
+]
+```
+
+### Filter
+
+**Endpoint:** `/filter/`
+
+**Method:** POST
+
+**Description:** Accepts a JSON object with a list of image URIs and optional parameters. It retrieves a list of images based on the provided URIs.
+
+**Request Body Example:**
+```json
+{
+  "filter": { "weekday": "Monday", "hour": "12-15" },
+  "k": 5,
+  "dataset": "Dataset Name",
+  "model": "Model Name",
+  "add_features": false,
+  "speed_up": true,
+}
+```
+
+**Response Example:**
+```json
+[
+  {
+    "uri": "image_uri",
+    "rank": 1,
+    "score": 0,
+    "id": ["video_id", "frame_id"],
+    "features": [0.1, 0.2, 0.3],
+    "label": [5, 10, 2, 3, 1],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  },
+  {
+    "uri": "another_image_uri",
+    "rank": 2,
+    "score": 0,
+    "id": ["video_id", "frame_id"],
+    "features": [0.2, 0.3, 0.4],
+    "label": [7, 4, 3, 9, 10],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  }
+]
 ```
 
 
