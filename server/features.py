@@ -17,12 +17,28 @@ import models as m
 
 
 def normalize_vector(vector):
-    # Normalize the vector by dividing it by its norm
+    """ Normalize the vector by dividing it by its norm 
+    
+    Args:
+        vector (torch.Tensor): The input vector to be normalized
+        
+    Returns:
+        torch.Tensor: The normalized vector
+    """
     return vector / vector.norm(dim=-1, keepdim=True)
 
 
 def load_data(dataset, model, selected_indices=None):
-    # Load data from the database
+    """ Load data from the database and filter it based on the selected indices
+    
+    Args:
+        dataset (str): The name of the dataset to load
+        model (str): The name of the model to use for feature extraction
+        selected_indices (list): The list of indices to select from the loaded data
+        
+    Returns:
+        tuple: A tuple containing the loaded data, IDs, labels, and time stamps
+    """
     db.load_features(dataset, model)
     data = db.get_data()
     ids = db.get_ids()
@@ -41,6 +57,15 @@ def load_data(dataset, model, selected_indices=None):
 
 
 def fallback_time_stamps(ids, dataset):
+    """ Generate time stamps for the specified IDs and dataset 
+    
+    Args:
+        ids (list): The list of IDs to generate time stamps for
+        dataset (str): The name of the dataset to generate time stamps for
+        
+    Returns:
+        numpy.ndarray: The generated time stamps
+    """
     # Initialize an empty list to store time stamps
     time_stamps = []
 
@@ -67,6 +92,17 @@ def fallback_time_stamps(ids, dataset):
 
 
 def get_time_stamps(db_time, slicing, ids, dataset):
+    """ Get the time stamps for the sliced IDs 
+    
+    Args:
+        db_time (numpy.ndarray): The array of time stamps to slice
+        slicing (list): The list of indices to slice the time stamps with
+        ids (list): The list of IDs to generate time stamps for
+        dataset (str): The name of the dataset to generate time stamps for
+        
+    Returns:
+        numpy.ndarray: The sliced time stamps
+    """
     # Check if the given db_time is empty
     if len(db_time) < 1:
         # If empty, use the fallback_time_stamps function to generate time stamps for the specified IDs and dataset
@@ -80,6 +116,16 @@ def get_time_stamps(db_time, slicing, ids, dataset):
 
 
 def get_cosine_ranking(query_vector, matrix, top_k = -1):
+    """ Get the top_k most similar vectors to the query vector 
+    
+    Args:
+        query_vector (torch.Tensor): The query vector to compare with the matrix
+        matrix (torch.Tensor): The matrix of vectors to compare with the query vector
+        top_k (int): The number of most similar vectors to return
+        
+    Returns:
+        tuple: A tuple containing the indices of the top_k most similar vectors and their similarity scores
+    """
     # Ensure the query vector has the same data type as the matrix
     query_vector = query_vector.to(matrix.dtype)
     
@@ -98,6 +144,8 @@ def get_cosine_ranking(query_vector, matrix, top_k = -1):
 
 
 def get_images_by_text_query(query: str, k: int, dataset: str, model: str, selected_indices: list):
+    """ Get the k most similar images to the text query """
+    
     start_time = time.time()
 
     # Tokenize query input and encode the data using the selected model
@@ -147,6 +195,7 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str, selec
 
 
 def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, selected_indices: list):
+    """ Get the k most similar images to the image query """
     start_time = time.time()
 
     # Preprocess query input and encode the data using the selected model
@@ -196,6 +245,7 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, se
 
 
 def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_indices: list):
+    """ Get the k most similar images to the image ID """
     start_time = time.time()
 
     # Load data
@@ -262,13 +312,8 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_i
 
 
 def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
-    # Load data from the database
-    # Get an array of video IDs from the database
-    db.load_features(dataset, model)
-    data = db.get_data()
-    ids = db.get_ids()
-    labels = db.get_labels()
-    db_time = db.get_time()
+    """ Get the k most similar images to the video ID """
+    data, ids, labels, db_time = load_data(dataset, model)
 
     # Get the video id and frame_id
     video_id, frame_id = db.uri_spliter(id, dataset)
@@ -340,13 +385,8 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
 
 
 def get_random_video_frame(dataset: str, model: str):
-    # Load data from the database
-    # Get an array of video IDs from the database
-    db.load_features(dataset, model)
-    data = db.get_data()
-    ids = db.get_ids()
-    labels = db.get_labels()
-    db_time = db.get_time()
+    """ Get a random video frame from the database """
+    data, ids, labels, db_time = load_data(dataset, model)
 
     # Generate a random index within the valid range of IDs
     random_id = np.random.randint(0, len(ids))
@@ -392,6 +432,7 @@ def get_random_video_frame(dataset: str, model: str):
 
 
 def get_images_by_temporal_query(query: str, query2: str, k: int, dataset: str, model: str, is_life_log: bool, selected_indices: list):
+    """ Get the k most similar images to the temporal query """
     start_time = time.time()
     
     queries = [query, query2]
@@ -517,6 +558,7 @@ def get_images_by_temporal_query(query: str, query2: str, k: int, dataset: str, 
 
 
 def weekday_to_number(weekday):
+    """ Convert a weekday string to a corresponding number """
     weekdays = {
         "Monday": 0, "Mon": 0, "Mo": 0,
         "Tuesday": 1, "Tue": 1, "Tu": 1,
@@ -531,11 +573,13 @@ def weekday_to_number(weekday):
 
 
 def apply_weekday_filter(metadata, column, value):
+    """ Apply a filter based on the weekday column """
     value = weekday_to_number(value)
     return metadata[metadata[column] == value].index.tolist()
 
 
 def apply_id_filter(metadata, column, value):
+    """ Apply a filter based on the ID column """
     if value.startswith("yyyymm"):
         value = value[6:]
         return metadata[metadata[column].str.slice(6, 8) == value].index.tolist()
@@ -550,6 +594,7 @@ def apply_id_filter(metadata, column, value):
     
 
 def apply_hour_filter(metadata, column, value):
+    """ Apply a filter based on the hour column """
     value1, value2 = value.split("-")
     filter_indices = []
     for i in range(int(value1), int(value2)):
@@ -558,10 +603,12 @@ def apply_hour_filter(metadata, column, value):
 
 
 def apply_generic_filter(metadata, column, value):
+    """ Apply a generic filter based on the column and value """
     return metadata[metadata[column].str.contains(value, case=False)].index.tolist()
 
 
 def get_filter_indices(filter: dict, dataset: str):
+    """ Get the indices of the metadata based on the filter dictionary """
     # Load metadata from the database
     db.load_features(dataset)
     metadata = db.get_metadata()
@@ -589,6 +636,7 @@ def get_filter_indices(filter: dict, dataset: str):
 
 
 def filter_metadata(filter: dict, k: int, dataset: str):
+    """ Filter the metadata based on the filter dictionary """
     # Load metadata from the database
     db.load_features(dataset)
     ids = db.get_ids()
@@ -625,6 +673,7 @@ def filter_metadata(filter: dict, k: int, dataset: str):
 
 
 def get_filters(dataset: str):
+    """ Get the available filters for the specified dataset """
     # Load metadata from the database
     db.load_features(dataset)
     metadata = db.get_metadata()

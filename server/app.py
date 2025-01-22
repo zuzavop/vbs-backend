@@ -20,7 +20,7 @@ import database as db
 
 # Create an instance of the FastAPI class
 app = FastAPI()
-origins = ['*']  # ['http://localhost', 'http://acheron.ms.mff.cuni.cz/']
+origins = ['*']  # ['http://localhost']
 
 app.add_middleware(
     CORSMiddleware,
@@ -152,10 +152,7 @@ async def text_query(query_params: dict):
 
 # Define the 'imageQuery' route
 @app.post('/imageQuery/')
-async def image_query(
-    image: UploadFile,
-    query_params: str = Form(...),
-):
+async def image_query(image: UploadFile, query_params: str = Form(...)):
     '''
     Get a list of images based on an image query.
     '''
@@ -259,7 +256,7 @@ async def text_query(query_params: dict):
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
-    is_life_logging = dataset == 'LSC'
+    is_life_logging = query_params.get('is_life_log', dataset == 'LSC')
     filter = query_params.get('filters', {})
     
     if filter == {}:

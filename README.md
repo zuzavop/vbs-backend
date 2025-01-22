@@ -28,6 +28,7 @@ Each query has a time limit (e.g., 5-7 minutes) and is rewarded on success with 
   - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
+    - [Setting up the Environment](#setting-up-the-environment)
   - [API Documentation](#api-documentation)
     - [Text Query](#text-query)
     - [Image Query](#image-query)
@@ -93,6 +94,23 @@ docker-compose up --build
 ```
 
 If new model like `ViT-SO400M-14-SigLIP-384` will be used, you need to download it first and add it to the `model` folder.
+
+### Setting up the Environment
+
+Set $DATA_PATH to the path where the data is stored. Create a folder for each dataset and add the data to it. Each type of data needs to be stored in a separate folder and named properly. The data should be stored in the following structure:
+
+```
+$DATA_PATH
+│
+└───name_of_dataset
+│   └───features-version_of_clip.tar.gz
+│   └───msb.tar.gz
+│   └───metadata.csv
+│   └───nounlist.txt
+
+```
+
+The `features-version_of_clip.tar.gz` file contains the features extracted from the dataset using the CLIP model. The `msb.tar.gz` file contains the timestamps of the dataset. The `metadata.csv` file contains the metadata of the dataset. The `nounlist.txt` file contains the list of nouns in the dataset that will be automatically extracted. If another metadata file type are used appropriate python script should be created to add the metadata to the database and `scripts/preprocess.bash` should be updated to reflect the changes.
 
 
 ## API Documentation
@@ -305,6 +323,7 @@ cd tests
 # Run the tests using the shell script
 ./test_textQuery.sh
 ```
+
 Ensure that you have set up any necessary test data or configurations before running the tests.
 
 ## Possible Datasets
@@ -314,6 +333,7 @@ Currently supported datasets for the VBS challenge:
  - V3C (https://zenodo.org/records/8188570)
  - MVK (https://zenodo.org/records/8355037)
  - VBSLHE (https://zenodo.org/records/10013329)
+ - LSC (http://lifelogsearch.org/lsc/lsc_data/)
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
@@ -326,5 +346,26 @@ This project is licensed under the MIT License - see the LICENSE file for detail
   journal = {VBS 2024 at MMM 2024},
   title   = {{PraK Tool: An Interactive Search Tool Based on Video Data Services}},
   year    = {2024},
+}
+```
+
+```
+@inproceedings{vopalkova2024searching,
+  title={Searching temporally distant activities in lifelog data with prak tool V2},
+  author={Vop{\'a}lkov{\'a}, Zuzana and Yaghob, Jakub and Stroh, Michael and Schlegel, Udo and Lokoc, Jakub},
+  booktitle={Proceedings of the 7th Annual ACM Workshop on the Lifelog Search Challenge},
+  pages={111--116},
+  year={2024}
+}
+```
+
+```
+@inproceedings{stroh2025prak,
+  title={PraK Tool V3: Enhancing Video Item Search Using Localized Text and Texture Queries},
+  author={Stroh, Michael and Kloda, Vojt{\v{e}}ch and Verner, Benjamin and Vop{\'a}lkov{\'a}, Zuzana and Buchm{\"u}ller, Raphael and J{\"a}ckl, Bastian and Hajko, Jakub and Loko{\v{c}}, Jakub},
+  booktitle={International Conference on Multimedia Modeling},
+  pages={326--333},
+  year={2025},
+  organization={Springer}
 }
 ```

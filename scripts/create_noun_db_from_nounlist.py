@@ -134,7 +134,7 @@ def load_clip_vit_so400m(path):
             model, _, preprocess = open_clip.create_model_and_transforms(
             'ViT-SO400M-14-SigLIP-384',
             pretrained="webli")
-            checkpoint_path = 'MCIP-ViT-SO400M-14-SigLIP-384.pth' #TODO: dowload this file
+            checkpoint_path = 'MCIP-ViT-SO400M-14-SigLIP-384.pth'
             mcip_state_dict = torch.load(checkpoint_path, map_location=torch.device('cpu'))
             model.load_state_dict(mcip_state_dict, strict=True)
 

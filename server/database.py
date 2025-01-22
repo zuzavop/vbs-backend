@@ -138,6 +138,14 @@ def set_data(new_data=None, new_ids=None, new_labels=None):
 
 
 def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL, first_load=False):
+    """ Load pre-generated embeddings from hard drive
+    
+    Args:
+        dataset (str): Name of the dataset
+        model (str): Name of the model
+        first_load (bool): If True, load only the first available model
+    """
+    global SPLITS_COLLECTIONS
     global DATA
     global DATA_COLLECTIONS
     global CUR_SELECTION
