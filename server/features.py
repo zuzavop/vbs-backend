@@ -395,7 +395,6 @@ def get_images_by_temporal_query(query: str, query2: str, k: int, dataset: str, 
     start_time = time.time()
     
     queries = [query, query2]
-    separator = db.name_splitter(dataset).encode()
 
     # Tokenize query input and encode the data using the selected model
     text_features = [m.embed_text(q, model) for q in queries]
@@ -466,23 +465,39 @@ def get_images_by_temporal_query(query: str, query2: str, k: int, dataset: str, 
     sorted_indices = max_images[:k]
     similarities = [s.item() for seq in sorted_indices for s, _ in seq]
     sorted_indices = [idx for seq in sorted_indices for _, idx in seq]
+    
+    # Add a new value between each pair of consecutive indices
+    extended_indices = []
+    extended_similarities = []
+    for i in range(0, len(sorted_indices), 2):
+        extended_indices.append(sorted_indices[i])
+        extended_similarities.append(similarities[i])
+        middle_value = (sorted_indices[i] + sorted_indices[i + 1]) // 2
+        extended_indices.append(middle_value)
+        extended_similarities.append(0)
+        extended_indices.append(sorted_indices[i + 1])
+        extended_similarities.append(similarities[i + 1])
+        last_value = sorted_indices[i + 1] - 1 if (sorted_indices[i] > sorted_indices[i + 1]) else sorted_indices[i + 1] + 1
+        extended_indices.append(last_value)
+        extended_similarities.append(0)
 
+    
     # If settings multiply and change to integer
-    selected_data = data[sorted_indices]
+    selected_data = data[extended_indices]
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
 
     # Get the time stamps for the sliced IDs
-    db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
+    db_time = get_time_stamps(db_time, extended_indices, ids, dataset)
 
     # Give only back the k most similar embeddings
     most_similar_samples = list(
         zip(
-            ids[sorted_indices].tolist(),
-            [i for i in range(len(sorted_indices))],
-            similarities,
+            ids[extended_indices].tolist(),
+            [i for i in range(len(extended_indices))],
+            extended_similarities,
             selected_data.tolist(),
-            labels[sorted_indices].tolist(),
+            labels[extended_indices].tolist(),
             db_time.tolist(),
         )
     )
