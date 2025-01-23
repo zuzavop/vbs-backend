@@ -1,6 +1,4 @@
-# RESTAPI for the Video Browser Showdown Challenge 
-
-<!-- ![Your Project Logo](logo.png)  If applicable -->
+# PraK - the data service
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/merowech/vbs-backend.svg)](https://github.com/merowech/vbs-backend/stargazers)
@@ -8,30 +6,36 @@
 
 ## Overview
 
-Backend for our submission at the https://videobrowsershowdown.org/ VBS challenge.
-The VBS is an international video content search competition that evaluates the state-of-the-art of interactive video retrieval systems. It has been performed annually as a special event at the International Conference on MultiMedia Modeling (MMM) since 2012. It aims at pushing research on large-scale video retrieval systems that are effective, fast, and easy to use for content search scenarios that are truly relevant in practice (e.g., known-item search in an ever-increasing video archive, as nowadays ubiquitous in many domains of our digital world).
+This repository contains the data service for the PraK tool, which is an interactive search tool designed to allow users to search in video collections. The tool is designed for the Video Browser Showdown (VBS) and Lifelog Search Challenge (LSC), which evaluate the state-of-the-art interactive video retrieval systems. The backend provides a REST API that allows users to search for video content using text, image, temporal queries, and others. The API is built using FastAPI and Uvicorn and is designed to be scalable and efficient.
 
-The VBS usually consists of an expert session and a novice session. In the expert session, the developers of the systems themselves try to solve different types of content search queries that are issued in an ad-hoc manner. Although the dataset itself is available to the researchers several months before the actual competition, the queries are unknown in advance and issued on-site. In the novice session volunteers from the MMM conference audience (without help from the experts) are required to solve another set of tasks. This should ensure that the interactive video retrieval tools do not only improve in terms of retrieval performance but also terms of usage (i.e., ease-of-use).
+The VBS is an international video content search competition that evaluates state-of-the-art interactive video retrieval systems. It has been performed annually as a special event at the International Conference on MultiMedia Modeling (MMM) since 2012. It aims at pushing research on large-scale video retrieval systems that are effective, fast, and easy to use for content search scenarios that are truly relevant in practice (e.g., known-item search in an ever-increasing video archive, as nowadays ubiquitous in many domains of our digital world).
+
+The VBS usually consists of an expert session and a novice session. In the expert session, the developers of the systems themselves try to solve different types of content search queries that are issued in an ad-hoc manner. Although the dataset itself is available to the researchers several months before the actual competition, the queries are unknown in advance and issued on-site. In the novice session volunteers from the MMM conference audience (without help from the experts) are required to solve another set of tasks. This should ensure that the interactive video retrieval tools do not only improve in terms of retrieval performance but also in terms of usage (i.e., ease-of-use).
 
 There are different types of queries:
 
- - **Known-Item Search (KIS):** a single video clip (20 seconds long) is randomly selected from the dataset and visually presented with the projector on-site. The participants need to find exactly the single instance presented. Another task variation of this kind is textual KIS, where instead of a visual presentation, the searched segment is described only by text given by the moderator (and presented as text via the projector).
- - **Ad-hoc Video Search (AVS):** here, a rather general description of many shots is presented by the moderator (e.g., „Find all shots showing cars in front of trees“) and the participants need to find as many correct examples (instances) according to the description.
- - **Question-Answering (QA):** the participants need to answer a question about the content of the video dataset. The questions are usually of the form „Which color has the object in the video, which was shown?“ or „What was written on the sign in the video?“.
-Each query has a time limit (e.g., 5-7 minutes) and is rewarded on success with a score that depends on several factors: the required search time, the number of false submissions (which are penalized), and the number of different instances found for AVS tasks. For the latter case, it is also considered, how many different ranges‚ were submitted for an AVS tasks. For example, many different but temporally close shots in the same video count much less than several different shots from different videos.
+- **Known-Item Search (KIS):** a single video clip (20 seconds long) is randomly selected from the dataset and visually presented with the projector on-site. The participants need to find exactly the single instance presented. Another task variation of this kind is textual KIS, where instead of a visual presentation, the searched segment is described only by text given by the moderator (and presented as text via the projector).
+- **Ad-hoc Video Search (AVS):** here, a rather general description of many shots is presented by the moderator (e.g., „Find all shots showing cars in front of trees“) and the participants need to find as many correct examples (instances) according to the description.
+- **Question-Answering (QA):** the participants need to answer a question about the content of the video dataset. The questions are usually of the form „Which color has the object in the video, which was shown?“ or „What was written on the sign in the video?“.
+
+Each query has a time limit (e.g., 5-7 minutes) and is rewarded on success with a score that depends on several factors: the required search time, the number of false submissions (which are penalized), and the number of different instances found for AVS tasks. For the latter case, it is also considered, how many different ranges‚ were submitted for AVS tasks. For example, many different but temporally close shots in the same video count much less than several different shots from different videos.
+
+The LSC is a competition that evaluates the effectiveness of lifelog search systems. Lifelogging is the process of tracking and recording data about one's life. It is usually done using wearable devices, such as cameras, microphones, and other sensors. The goal of lifelogging is to capture and store data about one's daily activities, such as the places visited, the people met, the food eaten, and the activities performed. Lifelogging data can be used for various purposes, such as memory augmentation, health monitoring, and behavior analysis. In the LSC competition, participants are required to develop systems that can search and retrieve information from lifelogging data effectively and efficiently. This competition has used a dataset, which contains a collection of lifelogging videos recorded by one person over a period of one and a half years. The competition otherwise follows the same rules as VBS and contains the same types of queries (KIS, AVS, QA).
 
 ## Table of Contents
 
-- [RESTAPI for the Video Browser Showdown Challenge](#restapi-for-the-video-browser-showdown-challenge)
+- [PraK - the data service](#prak---the-data-service)
   - [Overview](#overview)
   - [Table of Contents](#table-of-contents)
-  - [Getting Started](#getting-started)
+  - [Project Structure](#project-structure)
+  - [Endpoints](#endpoints)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
     - [Setting up the Environment](#setting-up-the-environment)
   - [API Documentation](#api-documentation)
     - [Text Query](#text-query)
     - [Image Query](#image-query)
+    - [Image Query by ID](#image-query-by-id)
     - [Get Video Image](#get-video-image)
     - [Temporal Query](#temporal-query)
     - [Filter](#filter)
@@ -40,16 +44,47 @@ Each query has a time limit (e.g., 5-7 minutes) and is rewarded on success with 
   - [License](#license)
   - [Reference](#reference)
 
-## Getting Started
+## Project Structure
+The project is separated into two main parts: the `server` folder and the `scripts` folder. The `server` folder contains the FastAPI application that serves the REST API, while the `scripts` folder contains the scripts that are used to preprocess the data and extract the features. The `server` folder contains the following files:
 
-See examples in the tests directory.
-However, in general it is a RESTAPI with the following endpoints:  
+- `app.py`: The main FastAPI application that serves the REST API. It contains the endpoints for the different types of queries.
+- `config.py`: The configuration file that contains the settings for the FastAPI application and the default parameters for the queries.
+- `models.py`: The CLIP models that are used by the data service. The models are loaded from the `model` folder if needed. The models are used for feature extraction and similarity calculation.
+- `database.py`: The loading of the data from preprocessed files and the creation of the so-called database. The database is used to store the metadata, features, and other information about the dataset. All the data is loaded into memory for fast access.
+- `features.py`: The main functionality of the data service, which includes the similarity calculation, filtering, and other operations on the data.
+- `logger.py`: The logger configuration that is used by the data service to log information about the requests and responses to the output.
+- `start.sh`: The shell script that is used to start the FastAPI application.
+
+Each script in the `server` folder is used to handle a specific part of the data service and all these scripts are connected as can be seen in the diagram below.
+
+![PraK Tool Architecture](./images/)
+
+The `scripts` folder contains the scripts that are used to preprocess the data and extract the features. The `scripts` folder contains the following files:
+
+- `preprocess.bash`: The bash script that is used to preprocess the data and extract the features. It's a pipeline that is used to create the database from the metadata, extract the features from the videos, and create the hdf5 file containing the feature vectors of noun from the nounlist.
+- `create_db_from_metadata.py`: The Python script that is used to create the database from the metadata, which contains the information about the frames. The metadata is stored in a CSV file. The script reads the metadata file and creates the database connected to the IDs of the frames.
+- `create_db_from_processed_features.py`: The Python script that is used to create the main database from the processed features. The processed features are stored in an HDF5 file. The script reads the features file and creates the database containing the IDs of the frames and their features.
+- `create_db_with_time_stamps.py`: The Python script that is used to create the database with time stamps. The time stamps are stored in a TSV file. The script reads the TSV files and creates the database that connects the IDs of the frames with their time stamps.
+- `create_noun_db_from_nounlist.py`: The Python script that is used to create the database of feature vectors from the nounlist using the selected CLIP model. The nounlist is stored in a text file. The script reads the nounlist file and creates the database containing the feature vectors of the nouns.
+- `extract_keyframes_if_msb_and_videos_present.py`: The Python script that is used to extract keyframes if the `msb ` folder and videos are present. The keyframes are extracted from the videos and stored in an `image` folder. The script reads the videos and extracts the keyframes from them using the FFmpeg library.
+- `keyframes_renamer_to_match_features.py`: The Python script that is used to rename keyframes to match the features. The keyframes are renamed to match the features that are stored in the HDF5 file. The script reads the keyframes and renames them to match the features.
+
+These scripts create a pipeline that is used to preprocess the data and extract the features. At the start of the pipeline, there are metadata, timestamps, videos, feature vectors and nounlist (except of feature vectors everything can be missing). The pipeline is used to first create the hdf5 file with the feature vectors of the nouns from the nounlist, then create the main database from extract the features of each video connected to their IDS, create the database with the time stamps, create the database with metadata and finally extract images from videos if `msb` folder is present. The pipeline is used to create the database that is used by the data service to serve the REST API.
+
+![PraK Tool Pipeline](./images/)
+
+## Endpoints
+
+The API has several endpoints that allow users to search for video content using different types of queries. The API is designed to be easy to use and efficient, and it provides a simple interface for searching video content. The supported endpoints are as follows:
+
 /textQuery/  
 /imageQuery/  
 /imageQueryByID/  
 /getVideoImages/
 /temporalQuery/
 /filter/
+
+The more specific details about the endpoints and their usage are provided in the API documentation section below.
 
 ## Prerequisites
 
@@ -75,7 +110,11 @@ However, in general it is a RESTAPI with the following endpoints:
 
 - **Dill** (for object serialization)
 
-Ensure Python is installed, create a virtual environment if needed, and install these libraries within your project environment for isolation.
+- **PyTorch** (for deep learning)
+
+- **orjson** (for fast JSON serialization)
+
+Ensure Python is installed, create a virtual environment if needed, and install all the required packages that are listed in the `requirements.txt` file.
 
 
 ## Installation
@@ -116,9 +155,10 @@ The `features-version_of_clip.tar.gz` file contains the features extracted from 
 ## API Documentation
 
 In general, there are several default parameters available for every query:  
-Defaults: `{"k": 1000, "dataset": "V3C", "model": "clip-laion", "max_labels": 10, "add_features": 0, "speed_up": 1}`  
+Defaults: `{"k": 1000, "dataset": "MVK", "model": "clip-vit-so400m", "max_labels": 10, "add_features": 0, "speed_up": 1}`  
 `"add_features"` adds features to the returning json depending on the `"dataset"` and `"model"`.  
-`"speed_up"` enables a download of the json file which speeds up the whole process.  
+`"speed_up"` enables a download of the json file which speeds up the whole process. 
+`"max_labels"` sets the maximum number of labels that can be returned. 
 
 ### Text Query
 
@@ -126,7 +166,7 @@ Defaults: `{"k": 1000, "dataset": "V3C", "model": "clip-laion", "max_labels": 10
 
 **Method:** POST
 
-**Description:** Accepts a JSON object with a text query and optional parameters. It retrieves a list of images based on the text query.   
+**Description:** Accepts a JSON object with a text query and optional parameters. It retrieves a list of images based on the similarity to the text query.   
 
 **Request Body Example:**
 ```json
@@ -137,6 +177,7 @@ Defaults: `{"k": 1000, "dataset": "V3C", "model": "clip-laion", "max_labels": 10
   "model": "Model Name",
   "add_features": false,
   "speed_up": true,
+  "filter": { "weekday": "Monday", "hour": "12-15" },
 }
 ```
   
@@ -172,11 +213,56 @@ See `tests\test_textQuery.sh` for an example.
 
 **Method:** POST
 
-**Description:** Accepts an image file upload and optional parameters. It retrieves a list of images based on the uploaded image query.
+**Description:** Accepts an image file upload and optional parameters. It retrieves a list of images based on the similarity to the uploaded image query.
 
 **Request Example:**
 
 See `tests\test_imageQuery.sh` for an example.
+
+**Response Example:**
+```json
+[
+  {
+    "uri": "image_uri",
+    "rank": 1,
+    "score": 0.95,
+    "id": ["video_id", "frame_id"],
+    "features": [0.1, 0.2, 0.3],
+    "label": [5, 10, 2, 3, 1],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  },
+  {
+    "uri": "another_image_uri",
+    "rank": 2,
+    "score": 0.92,
+    "id": ["video_id", "frame_id"],
+    "features": [0.2, 0.3, 0.4],
+    "label": [7, 4, 3, 9, 10],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  }
+]
+```
+
+### Image Query by ID
+
+**Endpoint:** `/imageQueryByID/`
+
+**Method:** POST
+
+**Description:** Accepts an image ID and optional parameters. It retrieves a list of images based on the similarity to the provided image ID.
+
+**Request Example:**
+```json
+{
+  "image_id": "YourImageIDHere",
+  "k": 5,
+  "dataset": "Dataset Name",
+  "model": "Model Name",
+  "add_features": false,
+  "speed_up": true,
+  "filter": { "weekday": "Monday", "hour": "12-15" },
+}
+```
 
 **Response Example:**
 ```json
@@ -208,7 +294,7 @@ See `tests\test_imageQuery.sh` for an example.
 
 **Method:** GET
 
-**Description:** Accepts a video ID and frame ID as parameters. It retrieves a specific video image based on the provided IDs.
+**Description:** Accepts a video ID and frame ID or item ID (`{video_id}_{frame_id}`) as parameters. It retrieves a specific video image based on the provided IDs.
 
 **Request Example:**
 See `tests\test_getVideoImage.sh` for an example.
@@ -218,6 +304,13 @@ See `tests\test_getVideoImage.sh` for an example.
 {
   "video_id": "YourVideoIDHere",
   "frame_id": "YourFrameIDHere",
+  "video_image": "image_data_here"
+}
+```
+
+```json
+{
+  "item_id": "YourItemIDHere",
   "video_image": "image_data_here"
 }
 ```
@@ -240,6 +333,7 @@ See `tests\test_getVideoImage.sh` for an example.
   "model": "Model Name",
   "add_features": false,
   "speed_up": true,
+  "filter": { "weekday": "Monday", "hour": "12-15" },
 }
 ```
 
@@ -273,7 +367,7 @@ See `tests\test_getVideoImage.sh` for an example.
 
 **Method:** POST
 
-**Description:** Accepts a JSON object with a list of image URIs and optional parameters. It retrieves a list of images based on the provided URIs.
+**Description:** Accepts a JSON object with a list of filters and optional parameters. It retrieves a list of images based on the provided filters.
 
 **Request Body Example:**
 ```json
