@@ -55,9 +55,9 @@ The project is separated into two main parts: the `server` folder and the `scrip
 - `logger.py`: The logger configuration that is used by the data service to log information about the requests and responses to the output.
 - `start.sh`: The shell script that is used to start the FastAPI application.
 
-Each script in the `server` folder is used to handle a specific part of the data service and all these scripts are connected as can be seen in the diagram below.
+Each script in the `server` folder is used to handle a specific part of the data service, so they basically create different components of the data service that ares are connected between each other as can be seen in the diagram below.
 
-![PraK Tool Architecture](./images/)
+![PraK Tool Architecture](./images/server.svg)
 
 The `scripts` folder contains the scripts that are used to preprocess the data and extract the features. The `scripts` folder contains the following files:
 
@@ -71,7 +71,7 @@ The `scripts` folder contains the scripts that are used to preprocess the data a
 
 These scripts create a pipeline that is used to preprocess the data and extract the features. At the start of the pipeline, there are metadata, timestamps, videos, feature vectors and nounlist (except of feature vectors everything can be missing). The pipeline is used to first create the hdf5 file with the feature vectors of the nouns from the nounlist, then create the main database from extract the features of each video connected to their IDS, create the database with the time stamps, create the database with metadata and finally extract images from videos if `msb` folder is present. The pipeline is used to create the database that is used by the data service to serve the REST API.
 
-![PraK Tool Pipeline](./images/)
+![PraK Tool Pipeline](./images/pipeline.svg)
 
 ## Endpoints
 
