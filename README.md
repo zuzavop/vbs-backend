@@ -41,13 +41,14 @@ The LSC is a competition that evaluates the effectiveness of lifelog search syst
     - [Filter](#filter)
   - [Running Tests](#running-tests)
   - [Possible Datasets](#possible-datasets)
+  - [Current Models](#current-models)
   - [License](#license)
   - [Reference](#reference)
 
 ## Project Structure
 The project is separated into two main parts: the `server` folder and the `scripts` folder. The `server` folder contains the FastAPI application that serves the REST API, while the `scripts` folder contains the scripts that are used to preprocess the data and extract the features. The `server` folder contains the following files:
 
-- `app.py`: The main FastAPI application that serves the REST API. It contains the endpoints for the different types of queries.
+- `app.py`: The main FastAPI application that serves the REST API. It contains [the endpoints](#endpoints) for the different types of queries.
 - `config.py`: The configuration file that contains the settings for the FastAPI application and the default parameters for the queries.
 - `models.py`: The CLIP models that are used by the data service. The models are loaded from the `model` folder if needed. The models are used for feature extraction and similarity calculation.
 - `database.py`: The loading of the data from preprocessed files and the creation of the so-called database. The database is used to store the metadata, features, and other information about the dataset. All the data is loaded into memory for fast access.
@@ -72,6 +73,8 @@ The `scripts` folder contains the scripts that are used to preprocess the data a
 These scripts create a pipeline that is used to preprocess the data and extract the features. At the start of the pipeline, there are metadata, timestamps, videos, feature vectors and nounlist (except of feature vectors everything can be missing). The pipeline is used to first create the hdf5 file with the feature vectors of the nouns from the nounlist, then create the main database from extract the features of each video connected to their IDS, create the database with the time stamps, create the database with metadata and finally extract images from videos if `msb` folder is present. The pipeline is used to create the database that is used by the data service to serve the REST API.
 
 ![PraK Tool Pipeline](./images/pipeline.svg)
+
+After the data is preprocessed and the features are extracted, the FastAPI application is started using the `start.sh` script. The server part then load all available datasets with their metadata into class [`memory_data_storage`](https://github.com/zuzavop/vbs-backend/blob/lsc2024/server/database.py#L31). The class is used to store all the data in memory and provide fast access to the data. If some additional type of metadata want to be added, the class should be updated to reflect the changes in all script that are used to preprocess the data and `models.py` file. Apropriate Python script should be created to add the new type of metadata to the database and `scripts/preprocess.bash` should be updated to reflect the changes.
 
 ## Endpoints
 
@@ -428,6 +431,17 @@ Currently supported datasets for the VBS challenge:
  - MVK (https://zenodo.org/records/8355037)
  - VBSLHE (https://zenodo.org/records/10013329)
  - LSC (http://lifelogsearch.org/lsc/lsc_data/)
+
+## Current Models
+
+Currently supported models for the PraK tool:
+
+ - `clip-vit-so400m` ([ViT-SO400M-14-SigLIP-384](https://huggingface.co/timm/ViT-SO400M-14-SigLIP-384))
+ - `clip-laion` ([hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K](https://huggingface.co/laion/CLIP-ViT-H-14-laion2B-s32B-b79K))
+ - `clip-openai` ([openai/clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14))
+ - `clip-vit-webli` ([hf-hub:timm/ViT-L-16-SigLIP-384](https://huggingface.co/timm/ViT-L-16-SigLIP-384))
+
+If you want to use a different model, you need to download it first and add it to the `model` folder and then add the model to the `models.py` file and for the preprocessing, you need to add the model to the `create_noun_db_from_nounlist.py` script and `preprocess.bash` script.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
