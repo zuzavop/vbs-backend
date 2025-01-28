@@ -16,19 +16,40 @@ import logger as l
 import configs as c
 
 
+# max depth to search for 'processed' folders
 max_depth = 2
 
 
+# global variables
+# memory_data_storage object to store the current used dataset
 DATA = None
+
+# dict to store all datasets and their features - key: dataset name with model name, value: memory_data_storage object
 DATA_COLLECTIONS = {}
+
+# dict to store timestamps for each dataset - key: path to pickle file, value: timestamps for each image from the dataset (timestamp of the video frame that the image represents) from the pickle file
 TIME_COLLECTIONS = {}
+
+# dict to store metadata information for eahc dataset - key: path to pickle file, value: metadata for each image from the dataset (contains additional information like place, weekday, etc.) from the pickle file
 METADATA_COLLECTIONS = {}
+
+# list to store the current selected dataset and model
 CUR_SELECTION = None
+
+# dict to store the splits of the current selected dataset and model - key: dataset name with model name, value: list of indices where the dataset is split - split dataset to each videos
 SPLITS_COLLECTIONS = {}
 
 
-# Class structure to store data, indices, labels, and the time
 class memory_data_storage:
+    """ Class to store data of each dataset in memory
+    
+    Attributes:
+        DATA: torch.tensor - feature vectors of images from the dataset
+        IDS: list - global ids of images from the dataset (ususally the filename)
+        LABELS: torch.tensor - index of labels of images to the nounlist (if available) from the dataset
+        TIME: str - path to the pickle file with timestamps of the dataset used as key into the TIME_COLLECTIONS
+        METADATA: str - path to the pickle file with metadata of the dataset used as key into the METADATA_COLLECTIONS
+    """
     DATA = None
     IDS = None
     LABELS = None
@@ -44,6 +65,7 @@ class memory_data_storage:
 
 
 def get_available_memory():
+    """ Get available memory of the system"""
     mem_info = psutil.virtual_memory()
     available_memory = mem_info.available
     return available_memory
@@ -58,17 +80,20 @@ def get_ids():
 
 
 def get_labels():
+    """ Get labels of the dataset if available otherwise return list with -1"""
     if isinstance(DATA.LABELS, list):
         return torch.tensor([-1] * len(DATA.IDS))
     return DATA.LABELS
 
 
 def get_splits():
+    """ Get splits of the dataset if available otherwise return empty array"""
     data_collection_name = f'{CUR_SELECTION[0]}-{CUR_SELECTION[1]}'
     return SPLITS_COLLECTIONS[data_collection_name]
 
 
 def get_time(new_data=None):
+    """ Get timestamps of the dataset if available otherwise return empty array"""
     global DATA
     global TIME_COLLECTIONS
 
@@ -95,6 +120,8 @@ def get_time(new_data=None):
     
     
 def get_metadata(new_data=None):
+    """ Get metadata of the dataset if available otherwise return empty dataframe
+    Metadata contains additional information like place, weekday, etc. """
     global DATA
     global METADATA_COLLECTIONS
     
@@ -121,11 +148,13 @@ def get_metadata(new_data=None):
         return pd.DataFrame()
 
 
-def name_splitter(dataset):
+def name_splitter(dataset='V3C'):
+    """ Get the separator used in the ids of the dataset"""
     return '_'
 
 
 def uri_spliter(id, dataset):
+    """ Split the id of the image to get the video id and the image id"""
     if dataset in ['V3C', 'VBSLHE', 'LSC']:
         return id.split('_', 1)
     else:
@@ -133,6 +162,7 @@ def uri_spliter(id, dataset):
 
 
 def set_data(new_data=None, new_ids=None, new_labels=None):
+    """ Set new data, ids and labels to the global variables"""
     global DATA
     DATA = memory_data_storage(new_data, new_ids, new_labels)
 
