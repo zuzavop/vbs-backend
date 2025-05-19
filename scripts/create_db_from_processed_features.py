@@ -21,13 +21,18 @@ class memory_data_storage:
     LABELS = None
     TIME = None
     METADATA = None
+    LOCAL_DATA = None
+    TEXTURE_DATA = None
 
-    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None):
+
+    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None, new_local_data=None, new_texture_data=None):
         self.DATA = new_data
         self.IDS = new_ids
         self.LABELS = new_labels
         self.TIME = new_time
         self.METADATA = new_metadata
+        self.LOCAL_DATA = new_local_data
+        self.TEXTURE_DATA = new_texture_data
 
 
 # Normalization
@@ -128,6 +133,7 @@ def load_and_save_features(DATABASE_ROOT, MODEL):
                 labels.append(indices)
             labels = torch.stack(labels)
             
+        print("Finished")
         sort_indices = np.argsort(ids)
         ids = ids[sort_indices]
         data = data[sort_indices]

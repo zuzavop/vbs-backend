@@ -8,12 +8,14 @@ services:
     volumes:
       - "${DATA_PATH}:/data/vbs/"
 
-  data-layer:
+  data-layer-1:
     build:
       context: .
       dockerfile: Dockerfile-server
-    ports:
-      - "80:80"
+    #ports:
+    #  - "80:80"
+    expose:
+      - "8000"
     volumes:
       - ./server:/app  # Mount the local app directory to /app in the container
       - ./model:/app/model
@@ -21,3 +23,30 @@ services:
     depends_on:
       preprocess:
         condition: service_completed_successfully
+
+  data-layer-2:
+    build:
+      context: .
+      dockerfile: Dockerfile-server
+    #ports:
+    #  - "81:80"  # Avoid conflict with data-layer-1
+    expose:
+      - "8000"
+    volumes:
+      - ./server:/app
+      - ./model:/app/model
+      - "${DATA_PATH}:/data/vbs/"
+    depends_on:
+      preprocess:
+        condition: service_completed_successfully
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - "${DATA_PATH}:/data/vbs/"
+    depends_on:
+      - data-layer-1
+      - data-layer-2

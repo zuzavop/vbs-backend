@@ -89,8 +89,8 @@ def load_open_clip(path):
             print(f'Noun list processed: {file_name}')
         else:
             print(f'Noun list already processed: {file_name}')
-            
-            
+
+
 def load_clip_vit_webli(path):
     noun_lists = load_noun_lists(path)
     for noun_list in noun_lists:

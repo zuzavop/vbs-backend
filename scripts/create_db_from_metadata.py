@@ -24,21 +24,24 @@ class memory_data_storage:
     LABELS = None
     TIME = None
     METADATA = None
+    LOCAL_DATA = None
+    TEXTURE_DATA = None
 
-    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None):
+    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None, new_local_data=None, new_texture_data=None):
         self.DATA = new_data
         self.IDS = new_ids
         self.LABELS = new_labels
         self.TIME = new_time
         self.METADATA = new_metadata
-
+        self.LOCAL_DATA = new_local_data
+        self.TEXTURE_DATA = new_texture_data
 
 def extend_db_with_metadata(db_dir, metadata_path):
     # Get all database files (ending with .pkl) excluding those with 'db_time' in the name
     pkl_files = [
         file
         for file in os.listdir(db_dir)
-        if file.endswith('.pkl') and 'db_time' not in file and 'db_metadata' not in file
+        if file.endswith('.pkl') and 'db_time' not in file and 'db_metadata' not in file and 'local' not in file
     ]
     
     try:

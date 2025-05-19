@@ -22,13 +22,17 @@ class memory_data_storage:
     LABELS = None
     TIME = None
     METADATA = None
+    LOCAL_DATA = None
+    TEXTURE_DATA = None
 
-    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None):
+    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None, new_local_data=None, new_texture_data=None):
         self.DATA = new_data
         self.IDS = new_ids
         self.LABELS = new_labels
         self.TIME = new_time
         self.METADATA = new_metadata
+        self.LOCAL_DATA = new_local_data
+        self.TEXTURE_DATA = new_texture_data
 
 
 # Function to extend a database with timestamps obtained from corresponding msb files
@@ -37,7 +41,7 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
     pkl_files = [
         file
         for file in os.listdir(db_dir)
-        if file.endswith('.pkl') and 'db_time' not in file and 'db_metadata' not in file
+        if file.endswith('.pkl') and 'db_time' not in file and 'db_metadata' not in file and 'local' not in file and 'texture' not in file
     ]
 
     # Get all msb files (ending with .tsv)
@@ -73,10 +77,9 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                 # Extract video IDs and frame IDs from the database
                 ids = np.array(data.IDS).astype(str)
 
-                print(ids)
-
                 # Iterate over unique IDs, extracting corresponding timestamps from msb files
                 for id in tqdm(ids):
+                    print(id)
                     splits = id.split('-', 1)
                     if len(splits) < 2:
                         splits = id.rsplit('_', 1)
@@ -108,8 +111,6 @@ def extend_db_with_time_stamps(db_dir, msb_dir):
                             if selected_time_stamps.empty:
                                 selected_time_stamps = df[df['id_visione'] == frame_id]
 
-                            print(selected_time_stamps)
-                            print(id)
                             # Append the extracted timestamps to the list
                             time_stamps.append(
                                 [

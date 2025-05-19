@@ -9,15 +9,22 @@ from io import BytesIO
 
 from fastapi import FastAPI, File, Query, Body, UploadFile, Form, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, StreamingResponse
 
 import logger as l
 import configs as c
 import features as fs
 import database as db
 
+import orjson
+import numpy as np
+
+
+#db.preload_features()
 
 # Create an instance of the FastAPI class
 app = FastAPI()
+
 origins = ['*']  # ['http://localhost', 'http://acheron.ms.mff.cuni.cz/']
 
 app.add_middleware(
@@ -28,8 +35,12 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+
 # Load features into the database
-db.load_features()
+#@app.on_event("startup")
+#async def startup_event():
+#    db.load_features(c.BASE_DATASET, c.BASE_MODEL)
+db.load_features(c.BASE_DATASET, c.BASE_MODEL, True)
 
 
 class RoundingFloat(float):
@@ -40,10 +51,27 @@ json.encoder.c_make_encoder = None
 json.encoder.float = RoundingFloat
 
 
+def streaming_json_generator(data: dict):
+    # Simple generator yielding the full JSON object as a single chunk
+    # You could break it into smaller chunks if needed
+    yield orjson.dumps(data)
+
+def streaming_response_creator(data: dict, as_attachment=False) -> StreamingResponse:
+    headers = {}
+    if as_attachment:
+        headers['Content-Disposition'] = 'attachment; filename="data.json"'
+    return StreamingResponse(
+        streaming_json_generator(data),
+        media_type='application/json',
+        headers=headers
+    )
+
 def attachment_response_creator(dict_for_json: dict) -> Response:
     start_time = time.time()
-    dict_for_json_str = json.dumps(dict_for_json)
+    dict_for_json_str = orjson.dumps(dict_for_json)
     headers = {'Content-Disposition': 'attachment; filename="data.json"'}
+    execution_time = time.time() - start_time
+    l.logger.info(f'Before Attachment response: {execution_time:.6f} secs')
     resp = Response(dict_for_json_str, headers=headers, media_type='application/json')
     execution_time = time.time() - start_time
     l.logger.info(f'Attachment response creation: {execution_time:.6f} secs')
@@ -58,10 +86,10 @@ def json_response_creator(dict_for_json: dict) -> Response:
     return resp
 
 
-def generate_min_return_dictionary(images, dataset, add_features=True, max_labels=10):
+def generate_min_return_dictionary(images, dataset, add_features=True, max_labels=10, start_time=0):
     # Create return dictionary
     ret_dict = []
-    for ids, features, labels, time in images:
+    for ids, features, labels, timestamp in images:
         if not add_features:
             features = []
 
@@ -77,16 +105,22 @@ def generate_min_return_dictionary(images, dataset, add_features=True, max_label
             'id': [video_id, frame_id],
             'features': features,
             'label': labels,
-            'time': time,
+            'time': timestamp,
         }
         ret_dict.append(tmp_dict)
+
+    ret_dict.append({
+        "T3_dataServiceReceived": start_time,
+        "T4_dataServiceProcessedQuery": time.time(),
+    })
+
     return ret_dict
 
 
-def generate_return_dictionary(images, dataset, add_features=True, max_labels=10):
+def generate_return_dictionary(images, dataset, add_features=True, max_labels=10, start_time=0):
     # Create return dictionary
     ret_dict = []
-    for ids, rank, score, features, labels, time in images:
+    for ids, rank, score, features, labels, timestamp in images:
         if not add_features:
             features = []
 
@@ -99,14 +133,20 @@ def generate_return_dictionary(images, dataset, add_features=True, max_labels=10
 
         tmp_dict = {
             'uri': f'{dataset}/{video_id}/{ids}.jpg',
-            'rank': rank,
-            'score': score,
+            'rank': np.array(rank).astype(str).tolist(),
+            'score': np.array(score).astype(str).tolist(),
             'id': [video_id, frame_id],
-            'features': features,
-            'label': labels,
-            'time': time,
+            #'features': np.array(features).astype(str).tolist(),
+            'label': np.array(labels).astype(str).tolist(),
+            'time': timestamp,
         }
         ret_dict.append(tmp_dict)
+
+    ret_dict.append({
+        "T3_dataServiceReceived": start_time,
+        "T4_dataServiceProcessedQuery": time.time(),
+    })
+
     return ret_dict
 
 
@@ -120,6 +160,7 @@ async def text_query(query_params: dict):
     l.logger.info(query_params)
 
     query = query_params.get('query', '')
+    position = query_params.get('position', '')
     k = min(query_params.get('k', c.BASE_K), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
@@ -127,20 +168,25 @@ async def text_query(query_params: dict):
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     filter = query_params.get('filters', {})
-    
+
     if filter == {}:
         selected_indeces = None
     else:
         selected_indeces = fs.get_filter_indices(filter, dataset)
 
     # Call the function to retrieve images
-    images = fs.get_images_by_text_query(query, k, dataset, model, selected_indeces)
+    if position == '':
+        images = fs.get_images_by_text_query(query, k, dataset, model, selected_indeces)
+    else:
+        images = fs.get_images_by_local_text_query(query, position, k, dataset, model, selected_indeces)
 
     # Create return dictionary
-    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels, start_time)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/textQuery: {execution_time:.6f} secs')
+
+    return streaming_response_creator(ret_dict, as_attachment=download_speed_up)
 
     if download_speed_up:
         return attachment_response_creator(ret_dict)
@@ -184,7 +230,7 @@ async def image_query(
         images = fs.get_images_by_image_query(uploaded_image, k, dataset, model, selected_indeces)
 
         # Create return dictionary
-        ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
+        ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels, start_time)
 
     except Exception as e:
         ret_dict = {'error': str(e)}
@@ -229,7 +275,7 @@ async def image_query_by_id(query_params: dict):
     images = fs.get_images_by_image_id(item_id, k, dataset, model, selected_indeces)
 
     # Create return dictionary
-    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels, start_time)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/imageQueryByID: {execution_time:.6f} secs')
@@ -250,6 +296,9 @@ async def text_query(query_params: dict):
     l.logger.info(query_params)
 
     query = query_params.get('query', '')
+    query2 = query_params.get('query2', '')
+    position = query_params.get('position', '')
+    position2 = query_params.get('position_scene_2', '')
     k = min(query_params.get('k', c.BASE_K), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
@@ -258,17 +307,17 @@ async def text_query(query_params: dict):
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
     is_life_logging = dataset == 'LSC'
     filter = query_params.get('filters', {})
-    
+
     if filter == {}:
         selected_indeces = None
     else:
         selected_indeces = fs.get_filter_indices(filter, dataset)
 
     # Call the function to retrieve images
-    images = fs.get_images_by_temporal_query(query, k, dataset, model, is_life_logging, selected_indeces)
+    images = fs.get_images_by_temporal_query(query, query2, position, position2, k, dataset, model, is_life_logging, selected_indeces)
 
     # Create return dictionary
-    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels, start_time)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/temporalQuery: {execution_time:.6f} secs')
@@ -286,28 +335,28 @@ async def filter(query_params: dict):
     '''
     start_time = time.time()
     l.logger.info(query_params)
-    
+
     filter = query_params.get('filters', {})
     k = min(query_params.get('k', c.BASE_K), 10000)
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
     add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
     download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
-    
+
     # Call the function to retrieve images
     images = fs.filter_metadata(filter, k, dataset)
-    
+
     # Create return dictionary
-    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
-    
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels, start_time)
+
     execution_time = time.time() - start_time
     l.logger.info(f'/filter: {execution_time:.6f} secs')
-    
+
     if download_speed_up:
         return attachment_response_creator(ret_dict)
     else:
         return json_response_creator(ret_dict)
-    
+
 
 # Define the 'getVideoFrames' route
 @app.post('/getVideoFrames/')
@@ -334,7 +383,7 @@ async def get_video_frames(query_params: dict):
     images = fs.get_video_images_by_id(item_id, k, dataset, model)
 
     # Create return dictionary
-    ret_dict = generate_min_return_dictionary(images, dataset, add_features, max_labels)
+    ret_dict = generate_min_return_dictionary(images, dataset, add_features, max_labels, start_time)
 
     execution_time = time.time() - start_time
     l.logger.info(f'/getVideoFrames: {execution_time:.6f} secs')
@@ -352,17 +401,17 @@ async def get_filters(dataset: str):
     '''
     start_time = time.time()
     l.logger.info(dataset)
-    
+
     dataset = dataset.upper()
-    
+
     # Call the function to retrieve filters
     filters = fs.get_filters(dataset)
-    
+
     execution_time = time.time() - start_time
     l.logger.info(f'/getFiltres: {execution_time:.6f} secs')
-    
+
     return {'filters': filters}
-    
+
 
 # Define the 'getRandomFrame' route
 @app.get('/getRandomFrame/')
@@ -388,6 +437,50 @@ async def get_random_frame(query_params: dict = {}):
         return json_response_creator(ret_dict)
 
 
+@app.post('/textureQuery/')
+async def texture_query(query_params: dict):
+    '''
+    Get a list of images based on a text query.
+    '''
+    start_time = time.time()
+    l.logger.info(query_params)
+
+    video_id = query_params.get('video_id', '')
+    frame_id = query_params.get('frame_id', '')
+    item_id = query_params.get('item_id', '')
+    position_source = query_params.get('position_source', '')
+    position_target = query_params.get('position_target', '')
+    k = min(query_params.get('k', c.BASE_K), 10000)
+    dataset = query_params.get('dataset', c.BASE_DATASET).upper()
+    model = query_params.get('model', c.BASE_MODEL)
+    max_labels = query_params.get('max_labels', c.BASE_MAX_LABELS)
+    add_features = bool(query_params.get('add_features', c.BASE_ADD_FEATURES))
+    download_speed_up = bool(query_params.get('speed_up', c.BASE_DOWNLOADING_SPEED_UP))
+    filter = query_params.get('filters', {})
+
+    if filter == {}:
+        selected_indeces = None
+    else:
+        selected_indeces = fs.get_filter_indices(filter, dataset)
+
+    # Call the function to retrieve images
+    if item_id == '':
+        item_id = f'{video_id}_{frame_id}'
+
+    images = fs.get_images_by_local_texture_query(item_id, position_source, position_target, k, dataset, model, selected_indeces)
+
+    # Create return dictionary
+    ret_dict = generate_return_dictionary(images, dataset, add_features, max_labels)
+
+    execution_time = time.time() - start_time
+    l.logger.info(f'/textureQuery: {execution_time:.6f} secs')
+
+    if download_speed_up:
+        return attachment_response_creator(ret_dict)
+    else:
+        return json_response_creator(ret_dict)
+
+
 # Define the 'getTimeInterval' route
 @app.get('/getTimeInterval/')
 async def get_time_interval(query_params: dict = {}):
@@ -397,6 +490,10 @@ async def get_time_interval(query_params: dict = {}):
     dataset = query_params.get('dataset', c.BASE_DATASET).upper()
     model = query_params.get('model', c.BASE_MODEL)
 
+
+@app.post('/returnOne/')
+async def return_of_one(query_params: dict):
+    return JSONResponse(content=1)
 
 # Define a route and its handler function
 @app.get('/')
@@ -408,7 +505,6 @@ async def read_root():
 if __name__ == '__main__':
     import uvicorn
 
-    uvicorn.run(app, host='0.0.0.0', port=8000, reload=True)
-    
-    
+    uvicorn.run(app, host='0.0.0.0', port=8000)
+
 

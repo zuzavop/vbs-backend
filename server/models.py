@@ -10,6 +10,12 @@ from transformers import AutoProcessor, AutoModelForZeroShotImageClassification
 import logger as l
 import configs as c
 
+import os
+
+torch.set_num_threads(12)
+os.environ["OMP_NUM_THREADS"] = "12"
+os.environ["MKL_NUM_THREADS"] = "12"
+
 
 # List available models
 available_models = ['clip-laion', 'clip-openai', 'clip-vit-webli', 'clip-vit-so400m']
@@ -167,7 +173,7 @@ def load_vit_so400m():
             pretrained="webli")
 
         checkpoint_path = 'model/MCIP-ViT-SO400M-14-SigLIP-384.pth' #TODO: dowload this file
-        mcip_state_dict = torch.load(checkpoint_path, map_location=torch.device('cpu'))
+        mcip_state_dict = torch.load(checkpoint_path, map_location=torch.device('cpu'), weights_only=True)
         model.load_state_dict(mcip_state_dict, strict=True)
 
         tokenizer = open_clip.get_tokenizer('ViT-SO400M-14-SigLIP-384')
@@ -185,8 +191,17 @@ def load_vit_so400m():
 def embed_text_so400m(text):
     model, tokenizer, _ = load_vit_so400m()
 
+    st_time = time.time()
     query_tokens = tokenizer(text)
-    text_features = model.encode_text(query_tokens).detach().cpu().flatten()
+    l.logger.info(f"Tokenizer: {(time.time() - st_time):.6f} secs")
+
+    st_time = time.time()
+    text_features = model.encode_text(query_tokens)
+    l.logger.info(f"Encode text: {(time.time() - st_time):.6f} secs")
+
+    st_time = time.time()
+    text_features = text_features.detach().cpu().flatten()
+    l.logger.info(f"Detach: {(time.time() - st_time):.6f} secs")
 
     return text_features
 

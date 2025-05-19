@@ -5,15 +5,30 @@ directory_path="/data/vbs"
 echo "Data directory: $directory_path"
 
 # Define an array
-my_array=("clip-laion" "clip-vit-webli" "clip-vit-so400m") # "clip-laion" "clip-openai" "aladin"
+my_array=("clip-laion" "clip-vit-webli" "clip-vit-so400m" "texture") # "clip-laion" "clip-openai" "aladin"
+
+loaded=true
 
 
 # Check if the directory exists
 if [ -d "$directory_path" ]; then
+
   # Use a for loop to iterate through subdirectories
   for subdirectory in "$directory_path"/*; do
 
-    if [ "$subdirectory" == "images" ]; then
+    if [ "$loaded" = true ]; then
+        continue
+    fi
+
+    # Extract the base name of the subdirectory
+    subdirectory_name=$(basename "$subdirectory")
+
+    if [ "$subdirectory_name" == "images" ]; then
+        # Continue with the loop
+        continue
+    fi
+
+    if [ "$subdirectory_name" == "videos" ]; then
         # Continue with the loop
         continue
     fi
@@ -30,7 +45,6 @@ if [ -d "$directory_path" ]; then
           for element in "${my_array[@]}"; do
             if [[ $(basename "$file") == *"$element"* ]]; then
               echo "Found $element in $file"
-              python create_noun_db_from_nounlist.py --base-dir "$subdirectory" --model-name "$element"
               if [[ "$file" == *.tar.gz ]]; then
                 # Extract the content only if not already extracted
                 extraction_directory="${file%.tar.gz}"
@@ -48,8 +62,16 @@ if [ -d "$directory_path" ]; then
                   fi
                 fi
 
-                # Create processed data from the found features
-                python create_db_from_processed_features.py --base-dir "$extraction_directory" --model-name "$element"
+                if [[ $(basename "$file") == *"features"* ]]; then
+                  python create_noun_db_from_nounlist.py --base-dir "$subdirectory" --model-name "$element"
+                  # Create processed data from the found features
+                  python create_db_from_processed_features.py --base-dir "$extraction_directory" --model-name "$element"
+                elif [[ $(basename "$file") == *"texture"* ]]; then
+                 # Execute the texture-related script
+                  python create_db_with_texture_features.py --db-dir "$extraction_directory" --model-name "$element"
+                else
+                  python create_db_with_local_features.py --db-dir "$extraction_directory" --model-name "$element"
+                fi
               fi
             fi
           done
@@ -59,9 +81,14 @@ if [ -d "$directory_path" ]; then
       # Check for *.tar.gz file with 'msb' in the name
       tar_file=$(find "$subdirectory" -type f -name "msb.tar.gz")
       if [ -n "$tar_file" ]; then
-          # Extract the tar.gz file
-          tar -xzf "$tar_file"
-          echo "Found *.tar.gz file with 'msb' in the name: $tar_file"
+          # Check if the msb directory already exists
+          if [ ! -d "$subdirectory/msb" ]; then
+              # Extract the tar.gz file
+              tar -xzf "$tar_file"
+              echo "Found *.tar.gz file with 'msb' in the name: $tar_file"
+          else
+              echo "msb directory already exists, skipping extraction of $tar_file"
+          fi
       fi
 
       # Check for a directory with 'msb' in the name and *.tsv files

@@ -23,8 +23,10 @@ DATA = None
 DATA_COLLECTIONS = {}
 TIME_COLLECTIONS = {}
 METADATA_COLLECTIONS = {}
+LOCAL_DATA_COLLECTIONS = {}
 CUR_SELECTION = None
-
+TEXTURE_DATA_COLLECTIONS = {}
+SPLITS_COLLECTIONS = {}
 
 # Class structure to store data, indices, labels, and the time
 class memory_data_storage:
@@ -33,14 +35,17 @@ class memory_data_storage:
     LABELS = None
     TIME = None
     METADATA = None
+    LOCAL_DATA = None
+    TEXTURE_DATA = None
 
-    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None):
+    def __init__(self, new_data=None, new_ids=None, new_labels=None, new_time=None, new_metadata=None, new_local_data=None, new_texture_data=None):
         self.DATA = new_data
         self.IDS = new_ids
         self.LABELS = new_labels
         self.TIME = new_time
         self.METADATA = new_metadata
-
+        self.LOCAL_DATA= new_local_data
+        self.TEXTURE_DATA= new_texture_data
 
 def get_available_memory():
     mem_info = psutil.virtual_memory()
@@ -60,6 +65,11 @@ def get_labels():
     if isinstance(DATA.LABELS, list):
         return torch.tensor([-1] * len(DATA.IDS))
     return DATA.LABELS
+
+
+def get_splits():
+    data_collection_name = f'{CUR_SELECTION[0]}-{CUR_SELECTION[1]}'
+    return SPLITS_COLLECTIONS[data_collection_name]
 
 
 def get_time(new_data=None):
@@ -115,6 +125,54 @@ def get_metadata(new_data=None):
         return pd.DataFrame()
 
 
+def get_local_data(new_data=None):
+    global DATA
+    global LOCAL_DATA_COLLECTIONS
+
+    if new_data is None and hasattr(DATA, 'LOCAL_DATA'):
+        type_local_file_name = DATA.LOCAL_DATA[next(iter(DATA.LOCAL_DATA))][:-13]
+        l.logger.info(type_local_file_name)
+        if type_local_file_name not in LOCAL_DATA_COLLECTIONS:
+            LOCAL_DATA_COLLECTIONS[type_local_file_name] = {}
+            for type_local, type_local_file in new_data.LOCAL_DATA.items():
+                if type_local_file is not None:
+                    with open(type_local_file, 'rb') as f:
+                        tmp_data = dill.load(f)
+
+                    if isinstance(tmp_data, list):
+                        tmp_data = torch.tensor(np.array(tmp_data), dtype=torch.float32)
+                    LOCAL_DATA_COLLECTIONS[type_local_file_name][type_local] = tmp_data
+            else:
+                return {}
+        return LOCAL_DATA_COLLECTIONS[type_local_file_name]
+    elif new_data is not None and hasattr(new_data, 'LOCAL_DATA'):
+        if new_data.LOCAL_DATA == {} or new_data.LOCAL_DATA is None:
+            return {}
+        for type_local, type_local_file in new_data.LOCAL_DATA.items():
+            type_local_file_name = type_local_file[:-13]
+            if type_local_file_name not in LOCAL_DATA_COLLECTIONS:
+                LOCAL_DATA_COLLECTIONS[type_local_file_name] = {}
+                l.logger.info(type_local_file)
+                if type_local_file is not None:
+                    with open(type_local_file, 'rb') as f:
+                        tmp_data = dill.load(f)
+
+                    if isinstance(tmp_data, list):
+                        tmp_data = torch.tensor(np.array(tmp_data), dtype=torch.float32)
+                    LOCAL_DATA_COLLECTIONS[type_local_file_name][type_local] = tmp_data
+            elif type_local_file_name in LOCAL_DATA_COLLECTIONS and type_local not in LOCAL_DATA_COLLECTIONS[type_local_file_name]:
+                l.logger.info(type_local_file)
+                if type_local_file is not None:
+                    with open(type_local_file, 'rb') as f:
+                        tmp_data = dill.load(f)
+
+                    if isinstance(tmp_data, list):
+                        tmp_data = torch.tensor(np.array(tmp_data), dtype=torch.float32)
+                    LOCAL_DATA_COLLECTIONS[type_local_file_name][type_local] = tmp_data
+    else:
+        return {}
+
+
 def name_splitter(dataset):
     if dataset in ['VBSLHE']:
         return '_'
@@ -134,7 +192,7 @@ def set_data(new_data=None, new_ids=None, new_labels=None):
     DATA = memory_data_storage(new_data, new_ids, new_labels)
 
 
-def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
+def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL, first_load=False):
     global DATA
     global DATA_COLLECTIONS
     global CUR_SELECTION
@@ -180,7 +238,7 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     # Get sizes of all datasets
     full_sizes = 0
     available_mem = get_available_memory()
-    l.logger.info(available_mem)
+    l.logger.info(f'Available memory: {available_mem}')
 
     # Check available models and datasets
     file_path = None
@@ -197,11 +255,28 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
             with open(cur_file, 'rb') as f:
                 DATA_COLLECTIONS[data_collection_name] = dill.load(f)
                 get_time(DATA_COLLECTIONS[data_collection_name])
-                get_metadata(DATA_COLLECTIONS[data_collection_name])
+                get_local_data(DATA_COLLECTIONS[data_collection_name])
+                get_texture_data(DATA_COLLECTIONS[data_collection_name])
+                if cur_dataset == 'LSC':
+                    get_metadata(DATA_COLLECTIONS[data_collection_name])
+
+            # Convert data to torch.float32
+            try:
+                data_tensor = DATA_COLLECTIONS[data_collection_name].DATA
+                DATA_COLLECTIONS[data_collection_name].DATA = data_tensor.to(torch.float32)
+
+                separator = name_splitter(cur_dataset).encode()
+                separator_ids = np.array([id.split(separator)[0] if cur_dataset == 'LSC' else id.rpartition(separator)[0] for id in DATA_COLLECTIONS[data_collection_name].IDS])
+                splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
+                SPLITS_COLLECTIONS[data_collection_name] = np.r_[0, splits, len(separator_ids)]
+            except Exception as e:
+                l.logger.error(f"Error converting data to torch.float32: {e}")
+                raise
 
         if cur_dataset == dataset and cur_model == model:
             file_path = cur_file
-            break
+            if not first_load:
+                break
         elif cur_dataset == dataset:
             file_path = cur_file
 
@@ -221,3 +296,52 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL):
     else:
         l.logger.error('File to load pre-generated embeddings not found:')
         l.logger.error(f'{file_path}')
+
+
+def get_texture_data(new_data=None):
+    global DATA
+    global TEXTURE_DATA_COLLECTIONS
+
+    if new_data is None and hasattr(DATA, 'TEXTURE_DATA'):
+        type_local_file_name = DATA.TEXTURE_DATA[next(iter(DATA.TEXTURE_DATA))][:-13]
+        l.logger.info(type_local_file_name)
+        if type_local_file_name not in TEXTURE_DATA_COLLECTIONS:
+            TEXTURE_DATA_COLLECTIONS[type_local_file_name] = {}
+            for type_local, type_local_file in new_data.TEXTURE_DATA.items():
+                if type_local_file is not None:
+                    with open(type_local_file, 'rb') as f:
+                        tmp_data = dill.load(f)
+
+                    if isinstance(tmp_data, list):
+                        tmp_data = torch.tensor(np.array(tmp_data), dtype=torch.float32)
+                    TEXTURE_DATA_COLLECTIONS[type_local_file_name][type_local] = tmp_data
+            else:
+                return {}
+        return TEXTURE_DATA_COLLECTIONS[type_local_file_name]
+    elif new_data is not None and hasattr(new_data, 'TEXTURE_DATA'):
+        if new_data.TEXTURE_DATA == {} or new_data.TEXTURE_DATA is None:
+            return {}
+        for type_local, type_local_file in new_data.TEXTURE_DATA.items():
+            type_local_file_name = type_local_file[:-13]
+            if type_local_file_name not in TEXTURE_DATA_COLLECTIONS:
+                TEXTURE_DATA_COLLECTIONS[type_local_file_name] = {}
+                l.logger.info(type_local_file)
+                if type_local_file is not None:
+                    with open(type_local_file, 'rb') as f:
+                        tmp_data = dill.load(f)
+
+                    if isinstance(tmp_data, list):
+                        tmp_data = torch.tensor(np.array(tmp_data), dtype=torch.float32)
+                    TEXTURE_DATA_COLLECTIONS[type_local_file_name][type_local] = tmp_data
+            elif type_local_file_name in TEXTURE_DATA_COLLECTIONS and type_local not in TEXTURE_DATA_COLLECTIONS[type_local_file_name]:
+                l.logger.info(type_local_file)
+                if type_local_file is not None:
+                    with open(type_local_file, 'rb') as f:
+                        tmp_data = dill.load(f)
+
+                    if isinstance(tmp_data, list):
+                        tmp_data = torch.tensor(np.array(tmp_data), dtype=torch.float32)
+                    TEXTURE_DATA_COLLECTIONS[type_local_file_name][type_local] = tmp_data
+    else:
+        return {}
+
