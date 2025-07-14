@@ -27,6 +27,7 @@ LOCAL_DATA_COLLECTIONS = {}
 CUR_SELECTION = None
 TEXTURE_DATA_COLLECTIONS = {}
 SPLITS_COLLECTIONS = {}
+STR_IDS_COLLECTIONS = {}
 
 # Class structure to store data, indices, labels, and the time
 class memory_data_storage:
@@ -72,12 +73,16 @@ def get_splits():
     return SPLITS_COLLECTIONS[data_collection_name]
 
 
+def get_str_ids():
+    data_collection_name = f'{CUR_SELECTION[0]}-{CUR_SELECTION[1]}'
+    return STR_IDS_COLLECTIONS[data_collection_name]
+
+
 def get_time(new_data=None):
     global DATA
     global TIME_COLLECTIONS
 
     if new_data is None and hasattr(DATA, 'TIME'):
-        l.logger.info(DATA.TIME)
         if DATA.TIME not in TIME_COLLECTIONS:
             if DATA.TIME is not None:
                 with open(DATA.TIME, 'rb') as f:
@@ -96,16 +101,15 @@ def get_time(new_data=None):
                 TIME_COLLECTIONS[new_data.TIME] = np.array(tmp_data)
     else:
         return np.array([])
-    
-    
+
+
 def get_metadata(new_data=None):
     global DATA
     global METADATA_COLLECTIONS
-    
+
     column_names = ['id', 'song name', 'album name', 'artist name', 'utc_time', 'local_time', 'latitude', 'longitude', 'semantic_name', 'time_zone', 'hour', 'weekday']
-    
+
     if new_data is None and hasattr(DATA, 'METADATA'):
-        l.logger.info(DATA.METADATA)
         if DATA.METADATA not in METADATA_COLLECTIONS:
             if DATA.METADATA is not None:
                 tmp_data = pd.read_pickle(DATA.METADATA)
@@ -197,8 +201,6 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL, first_load=False):
     global DATA_COLLECTIONS
     global CUR_SELECTION
 
-    l.logger.info(f'Selected dataset: {dataset}, model: {model}')
-
     if dataset == '':
         dataset = c.BASE_DATASET
     if model == '':
@@ -206,13 +208,11 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL, first_load=False):
 
     # Check if dataset and model are already loaded
     if [dataset, model] == CUR_SELECTION:
-        l.logger.info(f'Already selected dataset: {dataset}, model: {model}')
         return
     CUR_SELECTION = [dataset, model]
 
     data_collection_name = f'{dataset}-{model}'
     if data_collection_name in DATA_COLLECTIONS:
-        l.logger.info(f'Already loaded dataset: {dataset}, model: {model}')
         DATA = DATA_COLLECTIONS[data_collection_name]
         return
 
@@ -269,6 +269,7 @@ def load_features(dataset=c.BASE_DATASET, model=c.BASE_MODEL, first_load=False):
                 separator_ids = np.array([id.split(separator)[0] if cur_dataset == 'LSC' else id.rpartition(separator)[0] for id in DATA_COLLECTIONS[data_collection_name].IDS])
                 splits = np.where(separator_ids[:-1] != separator_ids[1:])[0] + 1
                 SPLITS_COLLECTIONS[data_collection_name] = np.r_[0, splits, len(separator_ids)]
+                STR_IDS_COLLECTIONS[data_collection_name] = np.array([x.decode() if isinstance(x, bytes) else x for x in DATA_COLLECTIONS[data_collection_name].IDS])
             except Exception as e:
                 l.logger.error(f"Error converting data to torch.float32: {e}")
                 raise
@@ -304,7 +305,6 @@ def get_texture_data(new_data=None):
 
     if new_data is None and hasattr(DATA, 'TEXTURE_DATA'):
         type_local_file_name = DATA.TEXTURE_DATA[next(iter(DATA.TEXTURE_DATA))][:-13]
-        l.logger.info(type_local_file_name)
         if type_local_file_name not in TEXTURE_DATA_COLLECTIONS:
             TEXTURE_DATA_COLLECTIONS[type_local_file_name] = {}
             for type_local, type_local_file in new_data.TEXTURE_DATA.items():

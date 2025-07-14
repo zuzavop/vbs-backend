@@ -54,7 +54,6 @@ def embed_text_laion(text):
     model, tokenizer, _ = load_laion()
 
     query_tokens = tokenizer(text)
-    # text_features = model.encode_text(query_tokens).detach().cpu().numpy().flatten()
     text_features = model.encode_text(query_tokens).detach().cpu().flatten()
 
     return text_features
@@ -65,7 +64,6 @@ def embed_image_laion(image):
     model, _, preprocess = load_laion()
 
     query_image = preprocess(image).unsqueeze(0)
-    # image_features = model.encode_image(query_image).detach().cpu().numpy().flatten()
     image_features = model.encode_image(query_image).detach().cpu().flatten()
 
     return image_features
@@ -172,7 +170,7 @@ def load_vit_so400m():
             'ViT-SO400M-14-SigLIP-384',
             pretrained="webli")
 
-        checkpoint_path = 'model/MCIP-ViT-SO400M-14-SigLIP-384.pth' #TODO: dowload this file
+        checkpoint_path = 'model/MCIP-ViT-SO400M-14-SigLIP-384.pth'
         mcip_state_dict = torch.load(checkpoint_path, map_location=torch.device('cpu'), weights_only=True)
         model.load_state_dict(mcip_state_dict, strict=True)
 
@@ -191,17 +189,10 @@ def load_vit_so400m():
 def embed_text_so400m(text):
     model, tokenizer, _ = load_vit_so400m()
 
-    st_time = time.time()
     query_tokens = tokenizer(text)
-    l.logger.info(f"Tokenizer: {(time.time() - st_time):.6f} secs")
-
-    st_time = time.time()
     text_features = model.encode_text(query_tokens)
-    l.logger.info(f"Encode text: {(time.time() - st_time):.6f} secs")
 
-    st_time = time.time()
     text_features = text_features.detach().cpu().flatten()
-    l.logger.info(f"Detach: {(time.time() - st_time):.6f} secs")
 
     return text_features
 

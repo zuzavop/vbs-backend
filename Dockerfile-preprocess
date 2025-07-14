@@ -6,11 +6,13 @@ WORKDIR /preprocess
 
 # Add ffmpeg
 RUN apt update && apt install -y ffmpeg
+RUN apt-get update && apt-get install -y gcc g++ make
 
 # Copy the requirements file into the container at /preprocess
 COPY ./requirements.txt /preprocess/
 
 # Install any needed packages specified in requirements.txt
+RUN pip install torch
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
 # Copy the preprocess code into the container

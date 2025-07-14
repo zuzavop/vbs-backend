@@ -2,6 +2,7 @@
 #!/usr/bin/env python3
 import time
 import torch
+from torch_scatter import scatter_max
 
 import numpy as np
 import pandas as pd
@@ -54,6 +55,11 @@ def get_time_stamps(db_time, slicing, ids, dataset):
         return db_time[slicing]
 
 
+@torch.compile
+def fast_matmul(q, dT):
+    return q @ dT
+
+
 def get_cosine_ranking(query_vector, matrix, top_k = -1, batch_size=9000000):
     query_vector = query_vector.to(matrix.dtype)
 
@@ -67,7 +73,7 @@ def get_cosine_ranking(query_vector, matrix, top_k = -1, batch_size=9000000):
     _, nearest_neighbors = torch.topk(dot_product, top_k, dim=-1)
 
     # Give back nearest neigbor sortings and distances
-    return nearest_neighbors, dot_product #, all_similarities
+    return nearest_neighbors, dot_product
 
 
 def get_texture_distance(query_vector, matrix, top_k = -1, batch_size=9000000):
@@ -104,8 +110,6 @@ def get_texture_distance(query_vector, matrix, top_k = -1, batch_size=9000000):
 
 
 def get_images_by_text_query(query: str, k: int, dataset: str, model: str, selected_indices: list):
-    start_time = time.time()
-
     # Tokenize query input and encode the data using the selected model
     text_features = m.embed_text(query, model)
 
@@ -149,16 +153,11 @@ def get_images_by_text_query(query: str, k: int, dataset: str, model: str, selec
         )
     )
 
-    execution_time = time.time() - start_time
-    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
-
     # Return a list of (ID, rank, score, feature, label, time) tuples
     return most_similar_samples
 
 
 def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, selected_indices: list):
-    start_time = time.time()
-
     # Preprocess query input and encode the data using the selected model
     image_features = m.embed_image(image, model)
 
@@ -181,7 +180,6 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, se
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(image_features, data, top_k=k)
-    #sorted_indices = sorted_indices[:k] old code, not needed anymore
 
     # If settings multiply and change to integer
     selected_data = data[sorted_indices]
@@ -203,16 +201,11 @@ def get_images_by_image_query(image: Image, k: int, dataset: str, model: str, se
         )
     )
 
-    execution_time = time.time() - start_time
-    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
-
     # Return a list of (ID, rank, score, feature, label, time) tuples
     return most_similar_samples
 
 
 def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_indices: list):
-    start_time = time.time()
-
     # Load data
     db.load_features(dataset, model)
     data = db.get_data()
@@ -241,7 +234,6 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_i
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(image_features, data, top_k = k)
-    #sorted_indices = sorted_indices[:k] old code, not needed anymore
 
     # If settings multiply and change to integer
     selected_data = data[sorted_indices]
@@ -263,16 +255,12 @@ def get_images_by_image_id(id: str, k: int, dataset: str, model: str, selected_i
         )
     )
 
-    execution_time = time.time() - start_time
-    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
-
     # Return a list of (ID, rank, score, feature, label, time) tuples
     return most_similar_samples
 
 
 def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
     # Load data from the database
-    # Get an array of video IDs from the database
     db.load_features(dataset, model)
     data = db.get_data()
     ids = db.get_ids()
@@ -342,7 +330,6 @@ def get_video_images_by_id(id: str, k: int, dataset: str, model: str):
 
 def get_random_video_frame(dataset: str, model: str):
     # Load data from the database
-    # Get an array of video IDs from the database
     db.load_features(dataset, model)
     data = db.get_data()
     ids = db.get_ids()
@@ -384,9 +371,7 @@ def get_random_video_frame(dataset: str, model: str):
     return video_images
 
 
-def get_images_by_temporal_query(query: str, query2: str, position: str, position2: str, k: int, dataset: str, model: str, is_life_log: bool, selected_indices: list):
-    start_time = time.time()
-
+def get_images_by_temporal_query(query: str, query2: str, position: str, position2: str, k: int, dataset: str, model: str, is_life_log: bool):
     queries = [query, query2]
     separator = db.name_splitter(dataset).encode()
 
@@ -395,6 +380,7 @@ def get_images_by_temporal_query(query: str, query2: str, position: str, positio
 
     # Normalize vector to make it smaller and for cosine calculcation
     text_features = [text_feature / text_feature.norm(dim=-1, keepdim=True) for text_feature in text_features]
+    text_features = torch.stack(text_features)
 
     # Load data
     db.load_features(dataset, model)
@@ -402,15 +388,6 @@ def get_images_by_temporal_query(query: str, query2: str, position: str, positio
     ids = db.get_ids()
     labels = db.get_labels()
     db_time = db.get_time()
-
-    if selected_indices is not None:
-        data = data[selected_indices]
-        ids = ids[selected_indices]
-        labels = labels[selected_indices]
-        if db_time.shape[0] > 0:
-            db_time = db_time[selected_indices]
-
-    starttime = time.time()
 
     if is_life_log:
         separator_ids = np.array([id[:11] for id in ids])
@@ -448,112 +425,65 @@ def get_images_by_temporal_query(query: str, query2: str, position: str, positio
 
         # Sort the images by their similarity score
         max_images.sort(key=lambda img: -sum(s for s,_ in img))
+
+        sorted_indices = max_images[:k]
+        similarities = [s.item() for seq in sorted_indices for s, _ in seq]
+        sorted_indices = [idx for seq in sorted_indices for _, idx in seq]
     else:
-        st = time.time()
-
         split_points = db.get_splits()
+        num_segments = len(split_points) - 1
 
-        execution_time = time.time() - st
-        l.logger.info(f'Preparation of computation: {execution_time:.6f} secs')
-        st = time.time()
+        # Precompute segment IDs
+        segment_ids = torch.zeros(data.shape[0], dtype=torch.long)
+        for i in range(num_segments):
+            segment_ids[split_points[i]:split_points[i + 1]] = i
+        segment_ids = segment_ids.to(data.device)
 
-        max_values_and_indices = []
-        for text_f in text_features:
-            _, sim = get_cosine_ranking(text_f, data)
-            sim = sim.numpy()
+        num_segments = segment_ids.max().item() + 1
 
-            max_values_and_indices.append([
-                (sim[split_points[i]:split_points[i+1]].max(), sim[split_points[i]:split_points[i+1]].argmax() + split_points[i])
-                for i in range(len(split_points) - 1)
-            ])
+        scores = []
+        argmax = []
 
-        execution_time = time.time() - st
-        l.logger.info(f'Main loop: {execution_time:.6f} secs')
-        st = time.time()
+        for i in range(text_features.shape[0]):
+            sim_i = torch.matmul(text_features[i], data.T)  # shape: (N,)
+            score_i, argmax_i = scatter_max(sim_i, segment_ids, dim=0, dim_size=num_segments)
+            scores.append(score_i)
+            argmax.append(argmax_i)
 
-        max_images = [[(max_values_and_indices[i][j][0], max_values_and_indices[i][j][1]) for i in range(len(max_values_and_indices))] for j in range(len(max_values_and_indices[0]))]
+        scores = torch.stack(scores)    # shape: (T, S)
+        argmax = torch.stack(argmax)    # shape: (T, S)
 
-        # Sort the images by their similarity score
-        max_images.sort(key=lambda img: -sum(s for s,_ in img))
+        # Aggregate across queries
+        agg_scores = scores.sum(0)  # (S,)
+        topk_scores, topk_seg = torch.topk(agg_scores, k)  # (k,)
+        topk_idxs = argmax[:, topk_seg]  # (T, k)
+        topk_vals = scores[:, topk_seg]  # (T, k)
 
-        execution_time = time.time() - st
-        l.logger.info(f'Sorting: {execution_time:.6f} secs')
+        # Optional: convert to flat structure if needed
+        sorted_indices = (topk_idxs.T.flatten() % data.shape[0])  # (T * k,)
+        similarities = topk_vals.T.flatten()    # (T * k,)
 
-
-        #indices_tensor = torch.tensor(split_points)
-
-        # Get the range of values to label
-        #max_value = indices_tensor[-1]
-        #breakpoints = torch.zeros(max_value, dtype=torch.long)
-
-        # Assign values to the range
-        #for i in range(len(indices_tensor) - 1):
-        #    start = indices_tensor[i]
-        #    end = indices_tensor[i + 1]
-        #    ids[start:end] = i
-
-        # Include the last range
-        #breakpoints[indices_tensor[-2]:indices_tensor[-1] + 1] = len(indices_tensor) - 2
-
-
-        #query_1 = text_features[0].to(data.dtype)
-        #sim_1 = torch.matmul(query_1, data.T)
-
-        #query_2 = text_features[1].to(data.dtype)
-        #sim_2 = torch.matmul(query_2, data.T)
-
-        #breakpoints = breakpoints.to(sim_1.dtype)
-
-        #sim_video_1 = torch.tensor(list(range(len(split_points)-1)), dtype=sim_1.dtype).scatter_reduce(0, breakpoints, sim_1,reduce="amax", include_self=False)
-        #argmax_video_1 = (sim_1.unsqueeze(0) == sim_video_1.unsqueeze(1)).nonzero(as_tuple=True)[1]
-        #sim_video_2 = torch.tensor(list(range(len(split_points)-1))).scatter_reduce(0, breakpoints, sim_2,reduce="amax", include_self=False)
-
-        #argmax_video_2 = (sim_2.unsqueeze(0) == sim_video_2.unsqueeze(1)).nonzero(as_tuple=True)[1]
-        #sim_summed = sim_video_1 + sim_video_2
-
-        #if top_k == -1 or top_k > sim_summed.shape[0]:
-        #        top_k = sim_summed.shape[0]
-
-        #_, nearest_neighbors = torch.topk(sim_summed, top_k, dim=-1)
-
-        #sim_video_1 = sim_video_1[nearest_neighbors]
-        #sim_video_2 = sim_video_2[nearest_neighbors]
-        #argmax_video_1 = argmax_video_1[nearest_neighbors]
-        #argmax_video_2 = argmax_video_2[nearest_neighbors]
-
-        #similarities = torch.stack([sim_video_1, sim_video_2], dim=1).flatten()
-        #sorted_indices = torch.stack([argmax_video_1, argmax_video_2], dim=1).flatten()
-        #selected_data = data[sorted_indices]
-
-
-    execution_time = time.time() - starttime
-    l.logger.info(f'Main computation: {execution_time:.6f} secs')
-    starttime = time.time()
-
-    sorted_indices = max_images[:k]
-    similarities = [s.item() for seq in sorted_indices for s, _ in seq]
-    sorted_indices = [idx for seq in sorted_indices for _, idx in seq]
 
     # Add a new value between each pair of consecutive indices
     extended_indices = []
     extended_similarities = []
     for i in range(0, len(sorted_indices) - 1, 2):
-        extended_indices.append(sorted_indices[i])
-        extended_similarities.append(similarities[i])
-        middle_value = (sorted_indices[i] + sorted_indices[i + 1]) // 2
-        extended_indices.append(middle_value)
-        extended_similarities.append(0)
-        extended_indices.append(sorted_indices[i + 1])
-        extended_similarities.append(similarities[i + 1])
-        last_value = sorted_indices[i + 1] - 1 if (sorted_indices[i] > sorted_indices[i + 1]) else sorted_indices[i + 1] + 1
-        extended_indices.append(last_value)
-        extended_similarities.append(0)
+        i1 = sorted_indices[i]
+        i2 = sorted_indices[i + 1]
+        extended_indices.extend([i1.item(), (i1 + i2) // 2, i2.item(), i2 + 1 if i2 > i1 else i2 - 1])
+        extended_similarities.extend([
+            similarities[i].item(),
+            0,
+            similarities[i + 1].item(),
+            0
+        ])
 
     # If settings multiply and change to integer
+    extended_indices = torch.tensor(extended_indices)
     selected_data = data[extended_indices]
+
     if c.BASE_MULTIPLICATION:
         selected_data = (selected_data * c.BASE_MULTIPLIER).int()
-
 
     # Get the time stamps for the sliced IDs
     db_time = get_time_stamps(db_time, extended_indices, ids, dataset)
@@ -562,16 +492,13 @@ def get_images_by_temporal_query(query: str, query2: str, position: str, positio
     most_similar_samples = list(
         zip(
             ids[extended_indices].tolist(),
-            [i for i in range(len(extended_indices))],
+            list(range(len(extended_indices))),
             extended_similarities,
             selected_data.tolist(),
             labels[extended_indices].tolist(),
             db_time.tolist(),
         )
     )
-
-    execution_time = time.time() - start_time
-    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
 
     # Return a list of (ID, rank, score, feature, label, time) tuples
     return most_similar_samples
@@ -677,8 +604,6 @@ def position_to_local_shortcut(position):
 
 
 def get_images_by_local_text_query(query: str, position: str, k: int, dataset: str, model: str, selected_indices: list):
-    start_time = time.time()
-
     position = position_to_local_shortcut(position)
 
     # Tokenize query input and encode the data using the selected model
@@ -694,9 +619,7 @@ def get_images_by_local_text_query(query: str, position: str, k: int, dataset: s
         data = data[position]
     else:
         data = db.get_data()
-    l.logger.info(len(data))
     ids = db.get_ids()
-    l.logger.info(len(data))
     labels = db.get_labels()
     db_time = db.get_time()
 
@@ -709,7 +632,6 @@ def get_images_by_local_text_query(query: str, position: str, k: int, dataset: s
 
     # Calculate cosine distance between embedding and data and sort similarities
     sorted_indices, similarities = get_cosine_ranking(text_features, data, top_k=k)
-    #sorted_indices = sorted_indices[:k] old code, not needed anymore
 
     # If settings multiply and change to integer
     selected_data = data[sorted_indices]
@@ -731,13 +653,8 @@ def get_images_by_local_text_query(query: str, position: str, k: int, dataset: s
         )
     )
 
-    execution_time = time.time() - start_time
-    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
-
     # Return a list of (ID, rank, score, feature, label, time) tuples
     return most_similar_samples
-
-
 
 
 def decode_position_string(position_string: str):
@@ -749,8 +666,6 @@ def decode_position_string(position_string: str):
 
 
 def get_images_by_local_texture_query(query: str, position_source: str , position_target: str, k: int, dataset: str, model: str, selected_indices: list):
-    start_time = time.time()
-
     positions_target = decode_position_string(position_target)
 
     # Load data
@@ -798,7 +713,6 @@ def get_images_by_local_texture_query(query: str, position_source: str , positio
     list_similarities_sorted, list_sorted_indices_updated = zip(*sorted_pairs)
 
     # Convert back to lists (optional, as zip() returns tuples)
-
     unique_pairs = {}
     for similarity, index in zip(list_similarities_sorted, list_sorted_indices_updated):
         if index not in unique_pairs:
@@ -807,7 +721,6 @@ def get_images_by_local_texture_query(query: str, position_source: str , positio
     # Extract the results back into lists
     list_sorted_indices_unique = list(unique_pairs.keys())
     list_similarities_unique = list(unique_pairs.values())
-
 
     sorted_indices = list_sorted_indices_unique[:k]
     list_similarities_unique = list_similarities_unique[:k]
@@ -832,8 +745,75 @@ def get_images_by_local_texture_query(query: str, position_source: str , positio
         )
     )
 
-    execution_time = time.time() - start_time
-    l.logger.info(f'Getting nearest embeddings: {execution_time:.6f} secs')
+    # Return a list of (ID, rank, score, feature, label, time) tuples
+    return most_similar_samples
+
+
+def bayes_update(selected_images, max_rank, sub_ids, scores, dataset: str, model: str, alpha=0.01):
+    sub_ids = np.array(['_'.join(pair) for pair in sub_ids])
+    selected_images = set(['_'.join(pair) for pair in selected_images])
+
+    # Load data
+    db.load_features(dataset, model)
+    data = db.get_data()
+    ids = db.get_ids()
+    labels = db.get_labels()
+    db_time = db.get_time()
+    scores = np.array(scores)
+
+    str_ids = db.get_str_ids()
+
+    # Filter to sub_ids
+    sub_mask = np.isin(str_ids, sub_ids)
+    if not sub_mask.any():
+        return []
+
+    data = data[sub_mask]
+    ids = ids[sub_mask]
+    labels = labels[sub_mask]
+    db_time = db_time[sub_mask]
+
+    str_ids = np.array([x.decode() if isinstance(x, bytes) else x for x in ids])
+    scores_indexes = [int(np.where(str_ids == item)[0][0]) for item in sub_ids]
+    scores = scores[scores_indexes]
+
+    max_rank = min(len(ids), max_rank)
+
+    # Positive and negative masks
+    pos_mask = np.isin(str_ids, list(selected_images))
+    neg_mask = np.zeros_like(pos_mask)
+    neg_mask[:max_rank] = ~pos_mask[:max_rank]
+
+    if not pos_mask.any() or not neg_mask.any():
+        return []
+
+    # Calculate products
+    prod_positive = fast_matmul(data[pos_mask], data.T)
+    prod_negative = fast_matmul(data[neg_mask], data.T)
+
+    # Calculate PF and NF
+    PF = torch.sum(torch.exp(- (1 - prod_positive) / alpha), dim=0)
+    NF = torch.sum(torch.exp(- (1 - prod_negative) / alpha), dim=0) + 1e-8
+
+    # Update scores with new weights
+    updated_scores = scores * (PF / NF).cpu().numpy()
+
+    sorted_indices = np.argsort(updated_scores)[::-1].copy()  # This removes negative strides
+
+    # Get the time stamps for the sliced IDs
+    db_time = get_time_stamps(db_time, sorted_indices, ids, dataset)
+
+    # Give only back the k most similar embeddings
+    most_similar_samples = list(
+        zip(
+            ids[sorted_indices].tolist(),
+            [i for i in range(len(sorted_indices))],
+            updated_scores[sorted_indices].tolist(),
+            data[sorted_indices].tolist(),
+            labels[sorted_indices].tolist(),
+            db_time.tolist(),
+        )
+    )
 
     # Return a list of (ID, rank, score, feature, label, time) tuples
     return most_similar_samples

@@ -12,4 +12,4 @@ scipy
 dill
 psutil==5.9.8
 orjson
-torch
+torch-scatter

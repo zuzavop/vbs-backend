@@ -83,9 +83,10 @@ The API has several endpoints that allow users to search for video content using
 /textQuery/  
 /imageQuery/  
 /imageQueryByID/  
-/getVideoImages/
-/temporalQuery/
-/filter/
+/getVideoImages/  
+/temporalQuery/  
+/filter/  
+/bayes/  
 
 The more specific details about the endpoints and their usage are provided in the API documentation section below.
 
@@ -116,6 +117,8 @@ The more specific details about the endpoints and their usage are provided in th
 - **PyTorch** (for deep learning)
 
 - **orjson** (for fast JSON serialization)
+
+- **Torch-scatter** (for scatter operations in PyTorch)
 
 Ensure Python is installed, create a virtual environment if needed, and install all the required packages that are listed in the `requirements.txt` file.
 
@@ -171,10 +174,23 @@ Defaults: `{"k": 1000, "dataset": "MVK", "model": "clip-vit-so400m", "max_labels
 
 **Description:** Accepts a JSON object with a text query and optional parameters. It retrieves a list of images based on the similarity to the text query.   
 
+**Requeired Parameters:**
+- `query`: The text query to search for in the dataset. This can be a single word or a phrase that describes the content you are looking for.
+
+**Optional Parameters:**
+- `position`: The position of the query in the image. There are currently 5 options: "top-left", "top-right", "bottom-left", "bottom-right", and "middle".
+- `k`: The number of results to return (default is 1000).
+- `dataset`: The name of the dataset to search in (default is "MVK").
+- `model`: The name of the model to use for the search (default is "clip-vit-so400m").
+- `add_features`: Whether to add features to the response (default is false).
+- `speed_up`: Whether to speed up the search by downloading a precomputed JSON file (default is true).
+- `filter`: A dictionary containing filters to apply to the search results, such as `{"weekday": "Monday", "hour": "12-15"}`.
+
 **Request Body Example:**
 ```json
 {
   "query": "Your Text Query Here",
+  "position": "Position of the Query",
   "k": 5,
   "dataset": "Dataset Name",
   "model": "Model Name",
@@ -218,6 +234,17 @@ See `tests\test_textQuery.sh` for an example.
 
 **Description:** Accepts an image file upload and optional parameters. It retrieves a list of images based on the similarity to the uploaded image query.
 
+**Required Parameters:**
+- `image`: The image file to search for in the dataset. This should be a valid image file (e.g., JPEG, PNG).
+
+**Optional Parameters:**
+- `k`: The number of results to return (default is 1000).
+- `dataset`: The name of the dataset to search in (default is "MVK").
+- `model`: The name of the model to use for the search (default is "clip-vit-so400m").
+- `add_features`: Whether to add features to the response (default is false).
+- `speed_up`: Whether to speed up the search by downloading a precomputed JSON file (default is true).
+- `filter`: A dictionary containing filters to apply to the search results, such as `{"weekday": "Monday", "hour": "12-15"}`.
+
 **Request Example:**
 
 See `tests\test_imageQuery.sh` for an example.
@@ -254,10 +281,27 @@ See `tests\test_imageQuery.sh` for an example.
 
 **Description:** Accepts an image ID and optional parameters. It retrieves a list of images based on the similarity to the provided image ID.
 
+**Required Parameters:**
+- `item_id`: The ID of the image to search for in the dataset. This should be a valid image ID that corresponds to an image in the dataset, formatted as `{video_id}_{frame_id}`.
+
+or 
+
+- `video_id`: The ID of the video to search for in the dataset.
+- `frame_id`: The ID of the frame to search for in the dataset.
+
+- `dataset`: The name of the dataset to search in (default is "MVK"). The dataset needs to contain the selected frame.
+
+**Optional Parameters:**
+- `k`: The number of results to return (default is 1000).
+- `model`: The name of the model to use for the search (default is "clip-vit-so400m").
+- `add_features`: Whether to add features to the response (default is false).
+- `speed_up`: Whether to speed up the search by downloading a precomputed JSON file (default is true).
+- `filter`: A dictionary containing filters to apply to the search results, such as `{"weekday": "Monday", "hour": "12-15"}`.
+
 **Request Example:**
 ```json
 {
-  "image_id": "YourImageIDHere",
+  "item_id": "YourImageIDHere",
   "k": 5,
   "dataset": "Dataset Name",
   "model": "Model Name",
@@ -299,23 +343,44 @@ See `tests\test_imageQuery.sh` for an example.
 
 **Description:** Accepts a video ID and frame ID or item ID (`{video_id}_{frame_id}`) as parameters. It retrieves a specific video image based on the provided IDs.
 
+**Required Parameters:**
+- `video_id`: The ID of the video to retrieve the image from.
+- `frame_id`: The ID of the frame to retrieve the image from.
+
+or
+
+- `item_id`: The ID of the image to retrieve, formatted as `{video_id}_{frame_id}`.
+
+- `dataset`: The name of the dataset to search in (default is "MVK"). The dataset needs to contain the selected frame.
+
+**Optional Parameters:**
+- `model`: The name of the model to use for the search (default is "clip-vit-so400m").
+- `add_features`: Whether to add features to the response (default is false).
+- `speed_up`: Whether to speed up the search by downloading a precomputed JSON file (default is true).
+
 **Request Example:**
 See `tests\test_getVideoImage.sh` for an example.
 
 **Response Example:**
 ```json
-{
-  "video_id": "YourVideoIDHere",
-  "frame_id": "YourFrameIDHere",
-  "video_image": "image_data_here"
-}
-```
-
-```json
-{
-  "item_id": "YourItemIDHere",
-  "video_image": "image_data_here"
-}
+[
+  {
+    "uri": "image_uri",
+    "rank": 1,
+    "id": ["video_id", "frame_id"],
+    "features": [0.1, 0.2, 0.3],
+    "label": [5, 10, 2, 3, 1],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  },
+  {
+    "uri": "another_image_uri",
+    "rank": 2,
+    "id": ["video_id", "frame_id"],
+    "features": [0.2, 0.3, 0.4],
+    "label": [7, 4, 3, 9, 10],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  }
+]
 ```
 
 ### Temporal Query
@@ -325,6 +390,17 @@ See `tests\test_getVideoImage.sh` for an example.
 **Method:** POST
 
 **Description:** Accepts a JSON object with a temporal query and optional parameters. It retrieves a list of images based on the temporal query.
+
+**Required Parameters:**
+- `query`: The first part of the text query to search for in the dataset.
+- `query2`: The second part of the text query to search for in the dataset.
+
+**Optional Parameters:**
+- `k`: The number of results to return (default is 1000).
+- `dataset`: The name of the dataset to search in (default is "MVK").
+- `model`: The name of the model to use for the search (default is "clip-vit-so400m").
+- `add_features`: Whether to add features to the response (default is false).
+- `speed_up`: Whether to speed up the search by downloading a precomputed JSON file (default is true).
 
 **Request Body Example:**
 ```json
@@ -372,6 +448,16 @@ See `tests\test_getVideoImage.sh` for an example.
 
 **Description:** Accepts a JSON object with a list of filters and optional parameters. It retrieves a list of images based on the provided filters.
 
+**Required Parameters:**
+- `filter`: A dictionary containing filters to apply to the search results, such as `{"weekday": "Monday", "hour": "12-15"}`.
+- `dataset`: The name of the dataset to search in (default is "MVK"). The dataset needs to support filtering.
+
+**Optional Parameters:**
+- `k`: The number of results to return (default is 1000).
+- `model`: The name of the model to use for the search (default is "clip-vit-so400m").
+- `add_features`: Whether to add features to the response (default is false).
+- `speed_up`: Whether to speed up the search by downloading a precomputed JSON file (default is true).
+
 **Request Body Example:**
 ```json
 {
@@ -402,6 +488,60 @@ See `tests\test_getVideoImage.sh` for an example.
     "score": 0,
     "id": ["video_id", "frame_id"],
     "features": [0.2, 0.3, 0.4],
+    "label": [7, 4, 3, 9, 10],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  }
+]
+```
+
+### Bayes
+
+**Endpoint:** `/bayes/`
+
+**Method:** POST
+
+**Description:** Accepts a JSON object with a selected frames, display data and optional parameters. It retrieves a list of images based Bayesian update of the sended frames.
+
+**Required Parameters:**
+- `selected_frames`: A list of selected frames to be used for the Bayesian update. Each frame should be represented as a list containing the video ID and frame ID, e.g., `["video_id", "frame_id"]`.
+- `ids`: A list of IDs to be used for the Bayesian update. Each ID should be represented as a list containing the video ID and frame ID, e.g., `["video_id", "frame_id"]`.
+- `scores`: A list of scores corresponding to the IDs. Each score should be a float value representing the confidence of the ID.
+- `dataset`: The name of the dataset to search in (default is "MVK").
+
+**Optional Parameters:**
+- `model`: The name of the model to use for the search (default is "clip-vit-so400m").
+- `add_features`: Whether to add features to the response (default is false).
+- `speed_up`: Whether to speed up the search by downloading a precomputed JSON file (default is true).
+
+**Request Body Example:**
+```json
+{
+  "selected_frames": [["video_id1", "frame_id1"]],
+  "ids": [["video_id1", "frame_id1"], ["video_id2", "frame_id2"], ["video_id3", "frame_id3"]],
+  "scores": [0.95, 0.92, 0.90],
+  "dataset": "Dataset Name",
+  "model": "Model Name",
+  "add_features": false,
+  "speed_up": true,
+}
+```
+
+**Response Example:**
+```json
+[
+  {
+    "uri": "image_uri",
+    "rank": 1,
+    "score": 0.95,
+    "id": ["video_id", "frame_id"],
+    "label": [5, 10, 2, 3, 1],
+    "time": ["id", 1450.0, 1350.0, 1550.0],
+  },
+  {
+    "uri": "another_image_uri",
+    "rank": 2,
+    "score": 0.92,
+    "id": ["video_id", "frame_id"],
     "label": [7, 4, 3, 9, 10],
     "time": ["id", 1450.0, 1350.0, 1550.0],
   }

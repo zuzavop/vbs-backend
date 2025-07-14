@@ -12,8 +12,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-server
-    #ports:
-    #  - "80:80"
     expose:
       - "8000"
     volumes:
@@ -28,8 +26,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-server
-    #ports:
-    #  - "81:80"  # Avoid conflict with data-layer-1
     expose:
       - "8000"
     volumes:
