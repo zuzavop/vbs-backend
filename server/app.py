@@ -141,7 +141,7 @@ def generate_return_dictionary(images, dataset, add_features=True, max_labels=10
 
 # Define the 'textQuery' route
 @app.post('/textQuery/')
-async def text_query(query_params: dict):
+def text_query(query_params: dict):
     '''
     Get a list of images based on a text query.
     '''
@@ -227,7 +227,7 @@ async def image_query(
 
 # Define the 'imageQueryByID' route
 @app.post('/imageQueryByID/')
-async def image_query_by_id(query_params: dict):
+def image_query_by_id(query_params: dict):
     '''
     Get a list of images based on an image query.
     '''
@@ -266,7 +266,7 @@ async def image_query_by_id(query_params: dict):
 
 # Define the 'temporalQuery' route
 @app.post('/temporalQuery/')
-async def temporal_query(query_params: dict):
+def temporal_query(query_params: dict):
     '''
     Get a list of images based on a temporal query.
     '''
@@ -298,7 +298,7 @@ async def temporal_query(query_params: dict):
 
 
 @app.post('/filter/')
-async def filter(query_params: dict):
+def filter(query_params: dict):
     '''
     Get a list of images based on a filter.
     '''
@@ -326,7 +326,7 @@ async def filter(query_params: dict):
 
 # Define the 'getVideoFrames' route
 @app.post('/getVideoFrames/')
-async def get_video_frames(query_params: dict):
+def get_video_frames(query_params: dict):
     '''
     Get a list of video images based on a video ID.
     '''
@@ -358,7 +358,7 @@ async def get_video_frames(query_params: dict):
 
 
 @app.get('/getFilters/')
-async def get_filters(dataset: str):
+def get_filters(dataset: str):
     '''
     Get a list of filters.
     '''
@@ -378,7 +378,7 @@ async def get_filters(dataset: str):
 
 # Define the 'getRandomFrame' route
 @app.get('/getRandomFrame/')
-async def get_random_frame(query_params: dict = {}):
+def get_random_frame(query_params: dict = {}):
     '''
     Get URI of random frame.
     '''
@@ -398,7 +398,7 @@ async def get_random_frame(query_params: dict = {}):
 
 
 @app.post('/textureQuery/')
-async def texture_query(query_params: dict):
+def texture_query(query_params: dict):
     '''
     Get a list of images based on a text query.
     '''
@@ -440,7 +440,7 @@ async def texture_query(query_params: dict):
 
 # Define the 'bayes' route
 @app.post('/bayes/')
-async def bayes(query_params: dict):
+def bayes(query_params: dict):
     '''
     Get a list of images based on bayes update.
     '''

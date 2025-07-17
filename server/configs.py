@@ -15,3 +15,8 @@ BASE_MULTIPLICATION = 1
 BASE_MULTIPLIER = 10000
 BASE_MAX_LABELS = 10
 BASE_LIFE_LOG = False
+
+# Model pool configuration
+MODEL_POOL_SIZE = 4
+MODEL_WARM_UP_ON_STARTUP = True
+DEFAULT_MODELS_TO_WARM = ['clip-vit-so400m']  # Models to initialize on startup
